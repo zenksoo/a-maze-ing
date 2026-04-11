@@ -1,4 +1,5 @@
-from mazegen.common import Dir, Action
+from common import Dir, Action
+
 
 class Cell:
     def __init__(self) -> None:
@@ -23,10 +24,14 @@ class Cell:
             if self.hex >> dir.value & 1:
                 return dir
 
-    def __get_next_cell(self) -> 'Cell':
+    def get_next_cell(self) -> 'Cell':
         all_neighbers = [self.top, self.right, self.bottom, self.left]
         return all_neighbers[self.__get_open_wall().value]
 
-    def update_walls(self):
-
-        pass
+    def update_walls(self, open_from: Dir):
+        self.__edit_wall(open_from, Action.OPEN)
+        for i in range(0, 4):
+            if Dir(i) == open_from:
+                self.__edit_wall(open_from, Action.OPEN)
+            else:
+                self.__edit_wall(Dir(i), Action.CLOSE)
