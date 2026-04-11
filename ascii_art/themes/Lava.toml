@@ -1,0 +1,7 @@
+[maze_colors]
+cell     = "#0D0000"
+road     = "#1A0500"
+wall     = "#FF4500"
+padding     = "#3A0A00"
+backdrop = "#0D0000"
+shadow   = "#FF6B35"
