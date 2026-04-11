@@ -6,5 +6,5 @@ from common import Themes
 
 if __name__ == "__main__":
     with open("output_file.txt", 'r') as f:
-        ascii_art = AsciiArt(f, Themes.SANDSTORM)
+        ascii_art = AsciiArt(f, Themes.DEFAULT)
         ascii_art.render()
