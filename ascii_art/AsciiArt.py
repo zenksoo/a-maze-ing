@@ -103,6 +103,8 @@ class AsciiArt:
         # bottom badding
         print_blk(PAD_BG, PAD * 2)
         print_blk(SHADOW, (self.width * 6) + 3)
+        print_blk(PAD_BG, PAD * 2)
+        print()
         for _ in range(0, 2):
             print_blk(PAD_BG, ((PAD * 2) * 2) + (self.width * 6) + 3)
             print()
