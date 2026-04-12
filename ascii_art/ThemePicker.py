@@ -1,13 +1,11 @@
 from common import Themes
-from typing import Dict, List
+from typing import Dict
 import tomllib
 from pathlib import Path
 
+
 PARENT_PATH = Path(__file__).parent
 
-
-def color_picker() -> Dict:
-    pass
 
 class ThemePicker:
     def __init__(self, theme: Themes) -> None:
@@ -24,12 +22,18 @@ class ThemePicker:
 
         return f"\033[48;2;{r};{g};{b}m"
 
-    def maze_theme(self) -> Dict:
-        maze_color: Dict = self.thm["maze_colors"]
-        for key, val in maze_color.items():
-            maze_color[key] = self.__get_rgb_bg(val)
+    def edit_hex_theme(self, theme: Dict) -> None:
+        for key, val in theme.items():
+            theme[key] = self.__get_rgb_bg(val)
 
-        return maze_color
+    def maze_theme(self) -> Dict:
+        self.edit_hex_theme(self.thm["maze_colors"])
+        return self.thm["maze_colors"]
 
     def locations_theme(self) -> Dict:
-        pass
+        self.edit_hex_theme(self.thm["locations"])
+        return self.thm["locations"]
+
+    def menu_theme(self) -> Dict:
+        self.edit_hex_theme(self.thm["menu_colors"])
+        return self.thm["menu_colors"]

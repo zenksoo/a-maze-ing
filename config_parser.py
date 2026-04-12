@@ -1,4 +1,4 @@
-from common.exceptions import *
+from common.exceptions import InstantiationError, MissingKey, InvalidValue, ConfigParseError
 from typing import Self, IO
 
 class ConfigParser:

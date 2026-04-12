@@ -1,10 +1,9 @@
 # module for errors type
-from common.enums import *
 
 
 class ProjectBaseError(Exception):
     def __str__(self) -> str:
-        return f"MAZE ERROR:"
+        return "MAZE ERROR:"
 
 
 class InstantiationError(ProjectBaseError):
@@ -30,4 +29,3 @@ class InvalidValue(ProjectBaseError):
 class ConfigParseError(ProjectBaseError):
     def __str__(self) -> str:
         return f"{self.args[0]}"
-
