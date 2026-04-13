@@ -8,6 +8,9 @@ from ascii_art.ThemePicker import ThemePicker
 class AsciiCell(Cell):
     def __init__(self, hex_val: str = "F") -> None:
         super().__init__(hex_val)
+        if self.value == 15:
+            self.type = CellType.LOCKED
+
 
 def cells_gen(cells_str: str) -> List[List[AsciiCell]]:
     cells: List[List[AsciiCell]] = []
@@ -28,16 +31,17 @@ def cells_gen(cells_str: str) -> List[List[AsciiCell]]:
     start, end = locations
 
     path = list(start)
-    for blk in road:
-        if blk == "S":
-            path[1] += 1
-        elif blk == "N":
-            path[1] -= 1
-        elif blk == "E":
-            path[0] += 1
-        elif blk == "W":
-            path[0] -= 1
-        cells[path[1]][path[0]].type = CellType.ROAD
+    if road:
+        for blk in road:
+            if blk == "S":
+                path[1] += 1
+            elif blk == "N":
+                path[1] -= 1
+            elif blk == "E":
+                path[0] += 1
+            elif blk == "W":
+                path[0] -= 1
+            cells[path[1]][path[0]].type = CellType.ROAD
 
     cells[start[1]][start[0]].type = CellType.START
     cells[end[1]][end[0]].type = CellType.END
@@ -54,6 +58,7 @@ class AsciiArt:
     def __init__(self, config: str | TextIO | List[List[Cell]],
                  theme: Themes = Themes.MIDNIGHT_OCEAN) -> None:
         self.theme: Themes = theme
+        self.PAD = 2
         if isinstance(config, io.IOBase):
             config = config.read()
         if isinstance(config, str):
@@ -72,28 +77,28 @@ class AsciiArt:
         maze_theme = picker.maze_theme().values()
         CELL, ROAD, WALL, PADDING, BACKDROP, SHADOW = maze_theme
         ENTRY, EXIT = picker.locations_theme().values()
-        PAD = 2
+        self.PAD = 2
 
         # top padding
         sys.stdout.write("\033[0J\033[H")
         sys.stdout.flush()
         for _ in range(0, 2):
-            print_blk(PADDING, ((PAD * 4) * 2) + (self.width * 6) + 3)
+            print_blk(PADDING, ((self.PAD * 4) * 2) + (self.width * 6) + 3)
             print(flush=True)
 
         for h in range(0, self.height):
             for j in range(0, 3):
-                print_blk(PADDING, PAD * 4)
+                print_blk(PADDING, self.PAD * 4)
                 for w in range(0, self.width):
                     cell = self.maze[h][w]
                     if j == 0:
                         print_blk(WALL, 2)
-                        if cell.n:
+                        if cell.value >> 0 & 1:
                             print_blk(WALL, 4)
                         else:
                             print_blk(BACKDROP, 4)
                     else:
-                        if cell.w:
+                        if cell.value >> 3 & 1:
                             print_blk(WALL, 2)
                         else:
                             print_blk(BACKDROP, 2)
@@ -112,26 +117,29 @@ class AsciiArt:
                             print_blk(BACKDROP, 4)
                 print_blk(WALL, 2)
                 print_blk(SHADOW, 1)
-                print_blk(PADDING, PAD * 4)
+                print_blk(PADDING, self.PAD * 4)
                 print(flush=True)
 
-        print_blk(PADDING, PAD * 4)
+        print_blk(PADDING, self.PAD * 4)
         for cell in self.maze[self.height - 1]:
             print_blk(WALL, 2)
-            if cell.s:
+            if cell.value >> 2 & 1:
                 print_blk(WALL, 4)
             else:
                 print_blk(BACKDROP, 4)
         print_blk(WALL, 2)
         print_blk(SHADOW, 1)
-        print_blk(PADDING, PAD * 4)
+        print_blk(PADDING, self.PAD * 4)
         print(flush=True)
 
         # bottom badding
-        print_blk(PADDING, PAD * 4)
+        print_blk(PADDING, self.PAD * 4)
         print_blk(SHADOW, (self.width * 6) + 3)
-        print_blk(PADDING, PAD * 4)
+        print_blk(PADDING, self.PAD * 4)
         print(flush=True)
         for _ in range(0, 2):
-            print_blk(PADDING, ((PAD * 4) * 2) + (self.width * 6) + 3)
+            print_blk(PADDING, ((self.PAD * 4) * 2) + (self.width * 6) + 3)
             print(flush=True)
+
+    def animation_menu(self):
+        pass

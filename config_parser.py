@@ -1,27 +1,28 @@
 from common.exceptions import InstantiationError, MissingKey, InvalidValue, ConfigParseError
 from typing import Self, IO
 
+
 class ConfigParser:
     REQUIREDKEYS = ['WIDTH', 'HEIGHT', 'ENTRY', 'EXIT', 'OUTPUT_FILE', 'PERFECT']
     OPTIONALKEYS = ['SEED', 'ALGORITHM' 'D_MODE']
     VALIDATORS = {
-        'WIDTH':       lambda v: int(v) > 0,
-        'HEIGHT':      lambda v: int(v) > 0,
-        'SEED':        lambda v: float(v) > 0,
-        'ENTRY':       lambda v: len(v.split(',')) == 2 and all(i.isdigit() for i in v.split(',')),
-        'EXIT':        lambda v: len(v.split(',')) == 2 and all(i.isdigit() for i in v.split(',')),
+        'WIDTH': lambda v: int(v) > 0,
+        'HEIGHT': lambda v: int(v) > 0,
+        'SEED': lambda v: True,
+        'ENTRY': lambda v: len(v.split(',')) == 2 and all(i.isdigit() for i in v.split(',')),
+        'EXIT': lambda v: len(v.split(',')) == 2 and all(i.isdigit() for i in v.split(',')),
         'OUTPUT_FILE': lambda v: len(v) > 0,
-        'PERFECT':     lambda v: v.lower() in ['true', 'false'],
+        'PERFECT': lambda v: v.lower() in ['true', 'false'],
     }
 
     CONFIG = {
-        'WIDTH':       lambda v: int(v),
-        'HEIGHT':      lambda v: int(v),
-        'SEED':        lambda v: float(v),
-        'ENTRY':       lambda v: tuple(map(int, v.split(','))),
-        'EXIT':        lambda v: tuple(map(int, v.split(','))),
+        'WIDTH': lambda v: int(v),
+        'HEIGHT': lambda v: int(v),
+        'SEED': lambda v: float(v),
+        'ENTRY': lambda v: tuple(map(int, v.split(','))),
+        'EXIT': lambda v: tuple(map(int, v.split(','))),
         'OUTPUT_FILE': lambda v: v,
-        'PERFECT':     lambda v: v.lower() == 'true',
+        'PERFECT': lambda v: v.lower() == 'true',
     }
 
     def __new__(cls) -> Self:
@@ -53,7 +54,7 @@ class ConfigParser:
 
             key, value = [ele.strip() for ele in line.split('=', 1)]
 
-            if not key in ConfigParser.REQUIREDKEYS and not key in ConfigParser.OPTIONALKEYS:
+            if not (key in ConfigParser.REQUIREDKEYS) and not (key in ConfigParser.OPTIONALKEYS):
                 raise ConfigParseError(f"Invalid key: '{key}'")
             if key in ConfigParser.VALIDATORS and ConfigParser.VALIDATORS[key](value):
                 config[key] = value
