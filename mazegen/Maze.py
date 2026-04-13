@@ -5,4 +5,4 @@
 
 class Maze:
     def __init__(self, config: dict) -> None:
-        pass
+        pass;

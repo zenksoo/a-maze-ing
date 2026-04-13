@@ -1,24 +1,13 @@
 from typing import List, TextIO
 import io
-from common import Themes, CellType
+import sys
+from common import Themes, CellType, Cell
 from ascii_art.ThemePicker import ThemePicker
 
 
-class AsciiCell:
-    def __init__(self, hex_value: str) -> None:
-        self.value = int(hex_value, 16)
-        self.n, self.e, self.s, self.w = self.hex_to_bool(self.value)
-        self.type: CellType = None
-
-    @staticmethod
-    def hex_to_bool(hex_val: int) -> List[int]:
-        return [
-            hex_val >> 0 & 1,
-            hex_val >> 1 & 1,
-            hex_val >> 2 & 1,
-            hex_val >> 3 & 1,
-        ]
-
+class AsciiCell(Cell):
+    def __init__(self, hex_val: str = "F") -> None:
+        super().__init__(hex_val)
 
 def cells_gen(cells_str: str) -> List[List[AsciiCell]]:
     cells: List[List[AsciiCell]] = []
@@ -58,18 +47,23 @@ def cells_gen(cells_str: str) -> List[List[AsciiCell]]:
 def print_blk(color: str, inch: int) -> None:
     DEFAULT = "\033[49m"
     print(f"{color}", " " * inch, DEFAULT, sep="", end="")
+    sys.stdout.flush()
 
 
 class AsciiArt:
-    def __init__(self, config: str | TextIO,
+    def __init__(self, config: str | TextIO | List[List[Cell]],
                  theme: Themes = Themes.MIDNIGHT_OCEAN) -> None:
+        self.theme: Themes = theme
         if isinstance(config, io.IOBase):
             config = config.read()
         if isinstance(config, str):
             self.maze: List[List[AsciiCell]] = cells_gen(config)
             self.width = len(self.maze[0])
             self.height = len(self.maze)
-            self.theme: Themes = theme
+        elif isinstance(config, list):
+            self.maze = config
+            self.width = len(self.maze[0])
+            self.height = len(self.maze)
         else:
             raise ValueError("The Config Must be String or File")
 
@@ -81,9 +75,11 @@ class AsciiArt:
         PAD = 2
 
         # top padding
+        sys.stdout.write("\033[0J\033[H")
+        sys.stdout.flush()
         for _ in range(0, 2):
             print_blk(PADDING, ((PAD * 4) * 2) + (self.width * 6) + 3)
-            print()
+            print(flush=True)
 
         for h in range(0, self.height):
             for j in range(0, 3):
@@ -101,20 +97,23 @@ class AsciiArt:
                             print_blk(WALL, 2)
                         else:
                             print_blk(BACKDROP, 2)
+
                         if cell.type == CellType.START:
                             print_blk(ENTRY, 4)
+                        elif cell.type == CellType.ORIGIN:
+                            print_blk(ENTRY, 4)
+                        elif cell.type == CellType.LOCKED:
+                            print_blk(CELL, 4)
                         elif cell.type == CellType.END:
                             print_blk(EXIT, 4)
                         elif cell.type == CellType.ROAD and show_path:
                             print_blk(ROAD, 4)
-                        elif cell.n and cell.e and cell.s and cell.w:
-                            print_blk(CELL, 4)
                         else:
                             print_blk(BACKDROP, 4)
                 print_blk(WALL, 2)
                 print_blk(SHADOW, 1)
                 print_blk(PADDING, PAD * 4)
-                print()
+                print(flush=True)
 
         print_blk(PADDING, PAD * 4)
         for cell in self.maze[self.height - 1]:
@@ -126,13 +125,13 @@ class AsciiArt:
         print_blk(WALL, 2)
         print_blk(SHADOW, 1)
         print_blk(PADDING, PAD * 4)
-        print()
+        print(flush=True)
 
         # bottom badding
         print_blk(PADDING, PAD * 4)
         print_blk(SHADOW, (self.width * 6) + 3)
         print_blk(PADDING, PAD * 4)
-        print()
+        print(flush=True)
         for _ in range(0, 2):
             print_blk(PADDING, ((PAD * 4) * 2) + (self.width * 6) + 3)
-            print()
+            print(flush=True)

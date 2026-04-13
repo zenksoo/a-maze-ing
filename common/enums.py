@@ -16,8 +16,10 @@ class Themes(Enum):
 class CellType(Enum):
     START = 0
     END = 1
-    LOCED = 2
+    LOCKED = 2
     ROAD = 3
+    ORIGIN = 4
+    NORMAL = 5
 
 
 class Dir(Enum):

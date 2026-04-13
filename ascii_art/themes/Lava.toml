@@ -13,3 +13,4 @@ end    = "#00E5FF"
 [menu_colors]
 text   = "#FFE4D6"
 button = "#FF4500"
+bg  = "#3A0A00"

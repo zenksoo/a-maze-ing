@@ -22,6 +22,14 @@ class ThemePicker:
 
         return f"\033[48;2;{r};{g};{b}m"
 
+    @staticmethod
+    def __get_text_color(hex_color: str) -> str:
+        r = int(hex_color[1:3], 16)
+        g = int(hex_color[3:5], 16)
+        b = int(hex_color[5:7], 16)
+
+        return f"\033[38;2;{r};{g};{b}m"
+
     def edit_hex_theme(self, theme: Dict) -> None:
         for key, val in theme.items():
             theme[key] = self.__get_rgb_bg(val)
@@ -35,5 +43,10 @@ class ThemePicker:
         return self.thm["locations"]
 
     def menu_theme(self) -> Dict:
-        self.edit_hex_theme(self.thm["menu_colors"])
+        menu_colors = self.thm["menu_colors"]
+        for key, val in menu_colors.items():
+            if key == "bg":
+                menu_colors[key] = self.__get_rgb_bg(val)
+            else:
+                menu_colors[key] = self.__get_text_color(val)
         return self.thm["menu_colors"]
