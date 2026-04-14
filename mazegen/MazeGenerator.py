@@ -1,6 +1,6 @@
 from typing import List, Dict
-from .MazeCell import MazeCell
-from common import Dir, Action, Themes, CellType
+from .MazeCell import MazeCell, Dir, Action
+from common import Themes, CellType
 import importlib
 import random
 import time
@@ -167,7 +167,7 @@ class MazeGenerator:
                 corns[2] = 1
 
             if all(corns):
-                corns[3] -= 0.2
+                corns[3] -= 0.02
             try:
                 if self.with_animation:
                     art.render()

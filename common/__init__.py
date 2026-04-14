@@ -1,4 +1,4 @@
-from common.enums import Action, Dir, Themes, CellType
+from common.enums import Themes, CellType
 
 
-__all__ = ["Action", "Dir", "Themes", "CellType"]
+__all__ = ["Themes", "CellType"]

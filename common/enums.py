@@ -22,13 +22,3 @@ class CellType(Enum):
     NORMAL = 9
 
 
-class Dir(Enum):
-    N = 0
-    E = 1
-    S = 2
-    W = 3
-
-
-class Action(Enum):
-    OPEN = 0
-    CLOSE = 1
