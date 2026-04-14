@@ -1,5 +1,6 @@
 from .MazeCell import MazeCell
 
+
 def remove_bit(val, index) -> int:
     if val >> index & 1:
         val -= 2 ** index
@@ -11,80 +12,73 @@ def add_bit(val, index) -> int:
         val += 2 ** index
     return val
 
+
 def setup_cell_bits(cell: MazeCell, new_type: str) -> None:
     """
-        (4 MSB) in first byte in cell.value represent type of the cell
-            0001 : start
-            0010 : end
-            1111 : locked
-            0011 : road
-            1100 : origin
-            0000 : normal cell
+        set the type of cell
+        (left 2 bits in 4 MSB) in first byte in cell.value represent type of the cell
+            **01 **** : start
+            **10 **** : end
+            **11 **** : road
+            **00 **** : origin
     """
-    # binary of start: 0001 1111
-    if new_type.lower() == 's':
-        for i in range(5, 8):
-            cell.value = remove_bit(cell.value, i)
+    # binary of start: **01 ****
+    if new_type.lower() == 'l':
+        cell.value = add_bit(cell.value, 8)
+
+    elif new_type.lower() == 'o':
+        cell.value = add_bit(cell.value, 9)
+
+    # binary of start: **01 ****
+    elif new_type.lower() == 's':
+        cell.value = remove_bit(cell.value, 5)
         cell.value = add_bit(cell.value, 4)
+        cell.value = remove_bit(cell.value, 8)
 
-    # binary of end: 0010 1111
+    # binary of end: **10 ****
     elif new_type.lower() == 'e':
-        for i in range(6, 8):
-            cell.value = remove_bit(cell.value, i)
-        cell.value = add_bit(cell.value, 5)
         cell.value = remove_bit(cell.value, 4)
+        cell.value = add_bit(cell.value, 5)
+        cell.value = remove_bit(cell.value, 8)
 
-    # binary of locked: 1111 1111
-    elif new_type.lower() == 'l':
-        for i in range(4, 8):
-            cell.value = add_bit(cell.value, i)
-
-    # binary of Road: 0011 1111
+    # binary of Road: **11 ****
     elif new_type.lower() == 'r':
         for i in range(4, 6):
             cell.value = add_bit(cell.value, i)
-        for i in range(6, 8):
-            cell.value = remove_bit(cell.value, i)
+        cell.value = remove_bit(cell.value, 8)
 
-    # binary of origin: 1100 1111
-    elif new_type.lower() == 'o':
-        for i in range(4, 6):
-            cell.value = remove_bit(cell.value, i)
-        for i in range(6, 8):
-            cell.value = add_bit(cell.value, i)
-    # binary of normal: 0000 1111
+    # binary of normal: **00 ****
     elif new_type.lower() == 'n':
-        for i in range(4, 8):
-            cell.value = remove_bit(cell.value, i)
+        cell.value = remove_bit(cell.value, 9)
 
 
 def get_cell_type(cell: MazeCell) -> str:
-        # binary of start: 0001 1111
-
-    shifted_value = cell.value >> 4
-    if shifted_value == 0b00000001:
-        return 's'
-
-    # binary of end: 0010 1111
-    elif shifted_value == 0b00000010:
-        return 'e'
-
-    # binary of locked: 1111 1111
-    elif shifted_value == 0b00001111:
+    """
+        get the type of cell as single char
+    """
+    # binary of locked cell is the LSB of the next byte: *******1 ********
+    if cell.value >> 8 == 0b00000001:
         return 'l'
 
-    # binary of Road: 0011 1111
-    elif shifted_value == 0b00000011:
-        return 'r'
-
-    # binary of origin: 1100 1111
-    elif shifted_value == 0b00001100:
+    # binary of locked cell is the second LSB of the next byte: ******1* ********
+    elif cell.value >> 9 == 0b00000001:
         return 'o'
 
-    # binary of normal: 0000 1111
-    elif shifted_value == 0b00000000:
-        return 'n'
+    # binary of start: **01 ****:
+    elif cell.value >> 4 == 0b00000001:
+        return 's'
 
+    # binary of end: **10 ****
+    elif cell.value >> 4 == 0b00000010:
+        return 'e'
+
+    # binary of Road: **11 ****
+    elif cell.value >> 4 == 0b00000011:
+        return 'r'
+
+    # binary of normal: **00 ****
+    elif cell.value >> 9 == 0b00000000:
+        return 'n'
 
 def walls_value(cell: MazeCell) -> int:
     val = 0
@@ -92,5 +86,3 @@ def walls_value(cell: MazeCell) -> int:
         if (cell.value >> i & 1):
             val += 2 ** i
     return val
-
-

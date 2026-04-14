@@ -8,6 +8,8 @@ class AsciiCell:
     def __init__(self, hex_val: str = "F") -> None:
         self.value: int = int(hex_val, 16)
 
+
+
 def remove_bit(val, index) -> int:
     if val >> index & 1:
         val -= 2 ** index
@@ -21,69 +23,64 @@ def add_bit(val, index) -> int:
 
 def setup_cell_bits(cell: AsciiCell, new_type: str) -> None:
     """
-        (4 MSB) in first byte in cell.value represent type of the cell
-            0001 : start
-            0010 : end
-            1111 : locked
-            0011 : road
-            1100 : origin
-            0000 : normal cell
+        (left 2 bits in 4 MSB) in first byte in cell.value represent type of the cell
+            **01 **** : start
+            **10 **** : end
+            **11 **** : road
+            **00 **** : origin
     """
-    # binary of start: 0001 ****
-    if new_type.lower() == 's':
+    # binary of start: **01 ****
+    if new_type.lower() == 'l':
+        cell.value = add_bit(cell.value, 8)
+
+    elif new_type.lower() == 'o':
+        cell.value = add_bit(cell.value, 9)
+
+    # binary of start: **01 ****
+    elif new_type.lower() == 's':
         cell.value = remove_bit(cell.value, 5)
         cell.value = add_bit(cell.value, 4)
+        cell.value = remove_bit(cell.value, 8)
 
-    # binary of end: 0010 1111
+    # binary of end: **10 ****
     elif new_type.lower() == 'e':
         cell.value = remove_bit(cell.value, 4)
         cell.value = add_bit(cell.value, 5)
+        cell.value = remove_bit(cell.value, 8)
 
-    # # binary of locked: 1111 1111
-    # elif new_type.lower() == 'l':
-    #     for i in range(4, 8):
-    #         cell.value = add_bit(cell.value, i)
-
-    # binary of Road: 0011 1111
+    # binary of Road: **11 ****
     elif new_type.lower() == 'r':
         for i in range(4, 6):
             cell.value = add_bit(cell.value, i)
-        for i in range(6, 8):
-            cell.value = remove_bit(cell.value, i)
+        cell.value = remove_bit(cell.value, 8)
 
-    # binary of origin: 1100 1111
-    elif new_type.lower() == 'o':
-        for i in range(4, 6):
-            cell.value = remove_bit(cell.value, i)
-        for i in range(6, 8):
-            cell.value = add_bit(cell.value, i)
-    # binary of normal: 0000 1111
-    elif new_type.lower() == 'n':
-        for i in range(4, 8):
-            cell.value = remove_bit(cell.value, i)
+    # binary of normal: **00 ****
+    elif new_type.lower == 'n':
+        cell.value = remove_bit(cell.value, 9)
 
 
 def get_cell_type(cell: AsciiCell) -> str:
-
-    shifted_value = cell.value >> 4
-    # binary of loced is the binary of all wall true: **** 1111
-    if cell.value << 4 == 0b11110000:
+    # binary of locked cell is the LSB of the next byte: *******1 ********
+    if cell.value >> 8 == 0b00000001:
         return 'l'
 
-    # binary of start: 0001 ****:
-    if shifted_value == 0b00000001:
+    elif cell.value >> 9 == 0b00000001:
+        return 'o'
+
+    # binary of start: **01 ****:
+    elif cell.value >> 4 == 0b00000001:
         return 's'
 
-    # binary of end: 0010 ****
-    elif shifted_value == 0b00000010:
+    # binary of end: **10 ****
+    elif cell.value >> 4 == 0b00000010:
         return 'e'
 
-    # binary of Road: 0011 ****
-    elif shifted_value == 0b00000011:
+    # binary of Road: **11 ****
+    elif cell.value >> 4 == 0b00000011:
         return 'r'
 
-    # binary of normal: 0000 ****
-    elif shifted_value == 0b00000000:
+    # binary of normal: **00 ****
+    elif cell.value >> 9 == 0b00000000:
         return 'n'
 
 def walls_value(cell: AsciiCell) -> int:
@@ -92,6 +89,7 @@ def walls_value(cell: AsciiCell) -> int:
         if (cell.value >> i & 1):
             val += 2 ** i
     return val
+
 
 def cells_gen(cells_str: str) -> List[List[AsciiCell]]:
     cells: List[List[AsciiCell]] = []
@@ -191,7 +189,6 @@ class AsciiArt:
                             print_blk(WALL, 2)
                         else:
                             print_blk(BACKDROP, 2)
-
                         if get_cell_type(cell) == 's':
                             print_blk(ENTRY, 4)
                         elif get_cell_type(cell) == 'o':

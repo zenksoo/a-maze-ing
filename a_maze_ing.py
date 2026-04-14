@@ -20,7 +20,7 @@ def a_maze_ing(theme: str):
 
 
 if __name__ == "__main__":
-    # a_maze_ing("LAVA")
-    with open("output_file.txt") as f:
-        art = AsciiArt(f, "lava")
-        art.render(False)
+    a_maze_ing("LAVA")
+    # with open("output_file.txt") as f:
+    #     art = AsciiArt(f, "lava")
+    #     art.render(True)

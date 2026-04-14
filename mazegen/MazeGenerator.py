@@ -47,6 +47,24 @@ def rand_dir() -> Dir:
     return random.choice(all_choise)
 
 
+def get_neighbor(self,
+                    maze: List[List['MazeCell']], dir: Dir) -> 'MazeCell':
+    neighbor: MazeCell = None
+    if dir == Dir.E and self.x + 1 < len(maze[0]):
+        neighbor = maze[self.y][self.x + 1]
+    elif dir == Dir.W and self.x - 1 >= 0:
+        neighbor = maze[self.y][self.x - 1]
+    elif dir == Dir.N and self.y - 1 >= 0:
+        neighbor = maze[self.y - 1][self.x]
+    elif dir == Dir.S and self.y + 1 < len(maze):
+        neighbor = maze[self.y + 1][self.x]
+
+    return neighbor
+
+
+
+
+
 class MazeGenerator:
     def __init__(self, config: Dict, theme: str = "DEFAULT",
                  with_animation: bool = False) -> None:
@@ -122,7 +140,6 @@ class MazeGenerator:
                         cell.edit_wall(Dir.S, Action.OPEN)
                         next_cell.edit_wall(Dir.N, Action.OPEN)
                 if next_cell:
-                    setup_cell_bits(next_cell, 'o')
                     if cell.neighbor == ():
                         cell.neighbor = (next_cell.x, next_cell.y)
                     setup_cell_bits(next_cell, 'n')
@@ -160,7 +177,6 @@ class MazeGenerator:
 
             origin.neighbor = (neighbor.x, neighbor.y)
             origin.update_all_walls(self.maze)
-            setup_cell_bits(origin, 'o')
 
             if (origin.x, origin.y) == (0, 0):
                 corns[0] = 1
@@ -168,6 +184,8 @@ class MazeGenerator:
                 corns[1] = 1
             elif (origin.x, origin.y) == (0, len(self.maze) - 1):
                 corns[2] = 1
+
+            setup_cell_bits(origin, 'o')
             try:
                 if self.with_animation:
                     art.render()
@@ -184,13 +202,10 @@ class MazeGenerator:
                 _ = importlib.import_module("ascii_art.AsciiArt")
             except ImportError:
                 self.with_animation = False
-        try:
-            self.init_maze()
-            self.origin_shift()
-            x, y = self.config["ENTRY"]
-            setup_cell_bits(self.maze[y][x], 's')
-            x, y = self.config["EXIT"]
-            setup_cell_bits(self.maze[y][x], 'e')
-            self.__output_file_generator()
-        except Exception as e:
-            print(f"Maze Generator Failed: {e}")
+        self.init_maze()
+        self.origin_shift()
+        x, y = self.config["ENTRY"]
+        setup_cell_bits(self.maze[y][x], 's')
+        x, y = self.config["EXIT"]
+        setup_cell_bits(self.maze[y][x], 'e')
+        self.__output_file_generator()
