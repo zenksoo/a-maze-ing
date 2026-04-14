@@ -1,4 +1,3 @@
-from common import Themes
 from typing import Dict
 import tomllib
 from pathlib import Path
@@ -8,8 +7,8 @@ PARENT_PATH = Path(__file__).parent
 
 
 class ThemePicker:
-    def __init__(self, theme: Themes) -> None:
-        theme_path: str = f"{PARENT_PATH}/themes/{theme.name.lower()}.toml"
+    def __init__(self, theme: str) -> None:
+        theme_path: str = f"{PARENT_PATH}/themes/{theme.lower()}.toml"
         with open(theme_path, 'rb') as f:
             self.theme = tomllib.load(f)
 

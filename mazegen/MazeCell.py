@@ -1,4 +1,4 @@
-from common import CellType
+from typing import List
 from enum import Enum
 
 class Dir(Enum):
@@ -16,7 +16,6 @@ class Action(Enum):
 class MazeCell():
     def __init__(self, x: int, y: int, hex_val: str = "F") -> None:
         self.value: int = int(hex_val, 16)
-        self.type: CellType = CellType.NORMAL
         self.neighbor: tuple = ()
         self.x = x
         self.y = y

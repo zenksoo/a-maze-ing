@@ -1,5 +1,4 @@
 from typing import List, TextIO
-from common import Themes, CellType
 from ascii_art.ThemePicker import ThemePicker
 import sys
 import io
@@ -8,14 +7,98 @@ import io
 class AsciiCell:
     def __init__(self, hex_val: str = "F") -> None:
         self.value: int = int(hex_val, 16)
-        self.type: CellType = CellType.NORMAL
 
+def remove_bit(val, index) -> int:
+    if val >> index & 1:
+        val -= 2 ** index
+    return val
+
+
+def add_bit(val, index) -> int:
+    if not (val >> index & 1):
+        val += 2 ** index
+    return val
+
+def setup_cell_bits(cell: AsciiCell, new_type: str) -> None:
+    """
+        (4 MSB) in first byte in cell.value represent type of the cell
+            0001 : start
+            0010 : end
+            1111 : locked
+            0011 : road
+            1100 : origin
+            0000 : normal cell
+    """
+    # binary of start: 0001 ****
+    if new_type.lower() == 's':
+        cell.value = remove_bit(cell.value, 5)
+        cell.value = add_bit(cell.value, 4)
+
+    # binary of end: 0010 1111
+    elif new_type.lower() == 'e':
+        cell.value = remove_bit(cell.value, 4)
+        cell.value = add_bit(cell.value, 5)
+
+    # # binary of locked: 1111 1111
+    # elif new_type.lower() == 'l':
+    #     for i in range(4, 8):
+    #         cell.value = add_bit(cell.value, i)
+
+    # binary of Road: 0011 1111
+    elif new_type.lower() == 'r':
+        for i in range(4, 6):
+            cell.value = add_bit(cell.value, i)
+        for i in range(6, 8):
+            cell.value = remove_bit(cell.value, i)
+
+    # binary of origin: 1100 1111
+    elif new_type.lower() == 'o':
+        for i in range(4, 6):
+            cell.value = remove_bit(cell.value, i)
+        for i in range(6, 8):
+            cell.value = add_bit(cell.value, i)
+    # binary of normal: 0000 1111
+    elif new_type.lower() == 'n':
+        for i in range(4, 8):
+            cell.value = remove_bit(cell.value, i)
+
+
+def get_cell_type(cell: AsciiCell) -> str:
+
+    shifted_value = cell.value >> 4
+    # binary of loced is the binary of all wall true: **** 1111
+    if cell.value << 4 == 0b11110000:
+        return 'l'
+
+    # binary of start: 0001 ****:
+    if shifted_value == 0b00000001:
+        return 's'
+
+    # binary of end: 0010 ****
+    elif shifted_value == 0b00000010:
+        return 'e'
+
+    # binary of Road: 0011 ****
+    elif shifted_value == 0b00000011:
+        return 'r'
+
+    # binary of normal: 0000 ****
+    elif shifted_value == 0b00000000:
+        return 'n'
+
+def walls_value(cell: AsciiCell) -> int:
+    val = 0
+    for i in range (0, 4):
+        if (cell.value >> i & 1):
+            val += 2 ** i
+    return val
 
 def cells_gen(cells_str: str) -> List[List[AsciiCell]]:
     cells: List[List[AsciiCell]] = []
     locations: List[tuple] = []
     road: str = None
 
+    x = y = 0
     for line in cells_str.splitlines():
         row_cell: List[AsciiArt] = []
         if "," in line:
@@ -23,9 +106,15 @@ def cells_gen(cells_str: str) -> List[List[AsciiCell]]:
         elif any(c in "NSW" for c in line):
             road = line
         elif line:
+            x = 0
             for cell in line:
                 row_cell.append(AsciiCell(cell))
+                if walls_value(row_cell[x]) == 15:
+                    setup_cell_bits(row_cell[x], 'l')
+                x += 1
             cells.append(row_cell)
+
+        y += 1
 
     start, end = locations
 
@@ -40,10 +129,11 @@ def cells_gen(cells_str: str) -> List[List[AsciiCell]]:
                 path[0] += 1
             elif blk == "W":
                 path[0] -= 1
-            cells[path[1]][path[0]].type = CellType.ROAD
 
-    cells[start[1]][start[0]].type = CellType.START
-    cells[end[1]][end[0]].type = CellType.END
+            setup_cell_bits(cells[path[1]][path[0]], 'r')
+
+    setup_cell_bits(cells[start[1]][start[0]], 's')
+    setup_cell_bits(cells[end[1]][end[0]], 'e')
     return cells
 
 
@@ -55,8 +145,8 @@ def print_blk(color: str, inch: int) -> None:
 
 class AsciiArt:
     def __init__(self, config: str | TextIO | List[List[AsciiCell]],
-                 theme: Themes = Themes.MIDNIGHT_OCEAN) -> None:
-        self.theme: Themes = theme
+                 theme: str = "MIDNIGHT_OCEAN") -> None:
+        self.theme = theme
         self.PAD = 2
         if isinstance(config, io.IOBase):
             config = config.read()
@@ -102,15 +192,15 @@ class AsciiArt:
                         else:
                             print_blk(BACKDROP, 2)
 
-                        if cell.type == CellType.START:
+                        if get_cell_type(cell) == 's':
                             print_blk(ENTRY, 4)
-                        elif cell.type == CellType.ORIGIN:
+                        elif get_cell_type(cell) == 'o':
                             print_blk(ENTRY, 4)
-                        elif cell.type == CellType.LOCKED:
+                        elif get_cell_type(cell) == 'l':
                             print_blk(CELL, 4)
-                        elif cell.type == CellType.END:
+                        elif get_cell_type(cell) == 'e':
                             print_blk(EXIT, 4)
-                        elif cell.type == CellType.ROAD and show_path:
+                        elif get_cell_type(cell) == 'r' and show_path:
                             print_blk(ROAD, 4)
                         else:
                             print_blk(BACKDROP, 4)
