@@ -6,6 +6,7 @@ from ascii_art import AsciiArt
 
 THEMS = []
 
+
 def a_maze_ing(theme: str):
     if len(sys.argv) != 2:
         raise ValueError("argvvvv")

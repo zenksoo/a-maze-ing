@@ -1,4 +1,3 @@
-from common.exceptions import InstantiationError, MissingKey, InvalidValue, ConfigParseError
 from typing import Self, IO
 
 
@@ -26,16 +25,16 @@ class ConfigParser:
     }
 
     def __new__(cls) -> Self:
-        raise InstantiationError(f"{cls.__name__} is a static class and cannot be instantiated.")
+        raise ValueError(f"{cls.__name__} is a static class and cannot be instantiated.")
 
     @staticmethod
     def validate(config: dict) -> dict:
         for key in ConfigParser.REQUIREDKEYS:
             if key not in config:
-                raise MissingKey(f"{key}")
+                raise ValueError(f"{key}")
         for key, value in config.items():
             if not ConfigParser.VALIDATORS[key](value):
-                raise InvalidValue(f"{value}")
+                raise ValueError(f"{value}")
         for key in config:
             config[key] = ConfigParser.CONFIG[key](config[key])
         return config
@@ -50,12 +49,12 @@ class ConfigParser:
             if not line or line.startswith('#'):
                 continue
             elif '=' not in line:
-                raise ConfigParseError(f"Invalid line: '{line}'")
+                raise ValueError(f"Invalid line: '{line}'")
 
             key, value = [ele.strip() for ele in line.split('=', 1)]
 
             if not (key in ConfigParser.REQUIREDKEYS) and not (key in ConfigParser.OPTIONALKEYS):
-                raise ConfigParseError(f"Invalid key: '{key}'")
+                raise ValueError(f"Invalid key: '{key}'")
             if key in ConfigParser.VALIDATORS and ConfigParser.VALIDATORS[key](value):
                 config[key] = value
 

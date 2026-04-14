@@ -1,6 +1,6 @@
 from typing import List, Dict
 from .MazeCell import MazeCell, Dir, Action
-from .edit_cell_bits import *
+from .edit_cell_bits import setup_cell_bits, get_cell_type, walls_value
 import importlib
 import random
 import time
@@ -45,24 +45,6 @@ def lock_fortytwo_blocks(maze: List[List[MazeCell]]) -> None:
 def rand_dir() -> Dir:
     all_choise = [Dir.N, Dir.E, Dir.S, Dir.W]
     return random.choice(all_choise)
-
-
-def get_neighbor(self,
-                    maze: List[List['MazeCell']], dir: Dir) -> 'MazeCell':
-    neighbor: MazeCell = None
-    if dir == Dir.E and self.x + 1 < len(maze[0]):
-        neighbor = maze[self.y][self.x + 1]
-    elif dir == Dir.W and self.x - 1 >= 0:
-        neighbor = maze[self.y][self.x - 1]
-    elif dir == Dir.N and self.y - 1 >= 0:
-        neighbor = maze[self.y - 1][self.x]
-    elif dir == Dir.S and self.y + 1 < len(maze):
-        neighbor = maze[self.y + 1][self.x]
-
-    return neighbor
-
-
-
 
 
 class MazeGenerator:
@@ -110,12 +92,12 @@ class MazeGenerator:
         exit = self.config["EXIT"]
 
         if (get_cell_type(self.maze[entry[1]][entry[0]]) == 'l' or
-            get_cell_type(self.maze[exit[1]][exit[0]]) == 'l'):
+                get_cell_type(self.maze[exit[1]][exit[0]]) == 'l'):
             raise ValueError("invalid coordinate")
-
 
         for row in self.maze:
             for cell in row:
+                x, y = cell.coor
                 if get_cell_type(cell) == 'l':
                     continue
                 next_cell = cell.get_neighbor(self.maze, Dir.E)
@@ -124,7 +106,6 @@ class MazeGenerator:
                     next_cell.edit_wall(Dir.W, Action.OPEN)
                 elif next_cell and get_cell_type(next_cell) == 'l':
                     tmp_cell = cell
-                    x, y = (cell.x, cell.y)
                     while next_cell and get_cell_type(next_cell) == 'l':
                         next_cell = tmp_cell.get_neighbor(self.maze, Dir.S)
                         if get_cell_type(next_cell) == 'l':
@@ -141,7 +122,7 @@ class MazeGenerator:
                         next_cell.edit_wall(Dir.N, Action.OPEN)
                 if next_cell:
                     if cell.neighbor == ():
-                        cell.neighbor = (next_cell.x, next_cell.y)
+                        cell.neighbor = (next_cell.coor[0], next_cell.coor[1])
                     setup_cell_bits(next_cell, 'n')
 
     def origin_shift(self) -> None:
@@ -170,19 +151,20 @@ class MazeGenerator:
 
         corns = [0, 0, 0, 4]
         while not all(corns) or (all(corns) and corns[3] > 0):
+            x, y = origin.coor
             neighbor = origin.get_neighbor(self.maze, rand_dir())
             while ((neighbor and get_cell_type(neighbor) == 'l')
                    or not neighbor):
                 neighbor = origin.get_neighbor(self.maze, rand_dir())
 
-            origin.neighbor = (neighbor.x, neighbor.y)
+            origin.neighbor = (neighbor.coor[0], neighbor.coor[1])
             origin.update_all_walls(self.maze)
 
-            if (origin.x, origin.y) == (0, 0):
+            if (x, y) == (0, 0):
                 corns[0] = 1
-            elif (origin.x, origin.y) == (len(self.maze[0]) - 1, 0):
+            elif (x, y) == (len(self.maze[0]) - 1, 0):
                 corns[1] = 1
-            elif (origin.x, origin.y) == (0, len(self.maze) - 1):
+            elif (x, y) == (0, len(self.maze) - 1):
                 corns[2] = 1
 
             setup_cell_bits(origin, 'o')

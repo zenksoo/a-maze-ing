@@ -24,32 +24,33 @@ def setup_cell_bits(cell: MazeCell, new_type: str) -> None:
     """
     # binary of start: **01 ****
     if new_type.lower() == 'l':
-        cell.value = add_bit(cell.value, 8)
+        cell.value = add_bit(cell.value, 6)
 
     elif new_type.lower() == 'o':
-        cell.value = add_bit(cell.value, 9)
+        cell.value = add_bit(cell.value, 7)
 
     # binary of start: **01 ****
     elif new_type.lower() == 's':
         cell.value = remove_bit(cell.value, 5)
         cell.value = add_bit(cell.value, 4)
-        cell.value = remove_bit(cell.value, 8)
+        cell.value = remove_bit(cell.value, 6)
 
     # binary of end: **10 ****
     elif new_type.lower() == 'e':
         cell.value = remove_bit(cell.value, 4)
         cell.value = add_bit(cell.value, 5)
-        cell.value = remove_bit(cell.value, 8)
+        cell.value = remove_bit(cell.value, 6)
 
     # binary of Road: **11 ****
     elif new_type.lower() == 'r':
         for i in range(4, 6):
             cell.value = add_bit(cell.value, i)
-        cell.value = remove_bit(cell.value, 8)
+        cell.value = remove_bit(cell.value, 6)
 
     # binary of normal: **00 ****
     elif new_type.lower() == 'n':
-        cell.value = remove_bit(cell.value, 9)
+        cell.value = remove_bit(cell.value, 6)
+        cell.value = remove_bit(cell.value, 7)
 
 
 def get_cell_type(cell: MazeCell) -> str:
@@ -57,11 +58,11 @@ def get_cell_type(cell: MazeCell) -> str:
         get the type of cell as single char
     """
     # binary of locked cell is the LSB of the next byte: *******1 ********
-    if cell.value >> 8 == 0b00000001:
+    if cell.value >> 6 == 0b00000001:
         return 'l'
 
     # binary of locked cell is the second LSB of the next byte: ******1* ********
-    elif cell.value >> 9 == 0b00000001:
+    elif cell.value >> 7 == 0b00000001:
         return 'o'
 
     # binary of start: **01 ****:
@@ -77,12 +78,12 @@ def get_cell_type(cell: MazeCell) -> str:
         return 'r'
 
     # binary of normal: **00 ****
-    elif cell.value >> 9 == 0b00000000:
+    elif cell.value >> 6 == 0b00000000:
         return 'n'
 
 def walls_value(cell: MazeCell) -> int:
     val = 0
-    for i in range (0, 4):
+    for i in range(0, 4):
         if (cell.value >> i & 1):
             val += 2 ** i
     return val
