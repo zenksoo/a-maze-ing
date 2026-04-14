@@ -1,10 +1,10 @@
 [maze_colors]
-cell     = "#9D4EDD"
+cell     = "#AF03DE"
 road     = "#4D3678"
-wall     = "#4A2080"
-padding  = "#1E1235"
-backdrop = "#140C25"
-shadow   = "#9D4EDD"
+wall     = "#1E0C35"
+padding  = "#332155"
+backdrop = "#8B41EB"
+shadow   = "#431668"
 
 [locations]
 start  = "#00F5D4"

@@ -1,14 +1,16 @@
 [maze_colors]
-cell      = "#0FF0FC"
-road      = "#003B3F"
-wall      = "#00C8D4"
-padding   = "#001820"
-backdrop  = "#000C10"
-shadow    = "#008B96"
+cell     = "#072EA2"
+road     = "#0D1B2A"
+wall     = "#1E6091"
+padding  = "#0D2137"
+backdrop = "#060A12"
+shadow   = "#1E90FF"
+
 [locations]
-start     = "#F5FF00"
-end       = "#FF00C8"
+start  = "#1E90FF"
+end    = "#00D4AA"
+
 [menu_colors]
-text      = "#C0FFFF"
-button    = "#0FF0FC"
-bg        = "#001820"
+text   = "#E8F4F8"
+button = "#1E6091"
+bg     = "#0A0E1A"

@@ -10,9 +10,8 @@ PARENT_PATH = Path(__file__).parent
 class ThemePicker:
     def __init__(self, theme: Themes) -> None:
         theme_path: str = f"{PARENT_PATH}/themes/{theme.name.lower()}.toml"
-
         with open(theme_path, 'rb') as f:
-            self.thm = tomllib.load(f)
+            self.theme = tomllib.load(f)
 
     @staticmethod
     def __get_rgb_bg(hex_color: str) -> str:
@@ -35,18 +34,18 @@ class ThemePicker:
             theme[key] = self.__get_rgb_bg(val)
 
     def maze_theme(self) -> Dict:
-        self.edit_hex_theme(self.thm["maze_colors"])
-        return self.thm["maze_colors"]
+        self.edit_hex_theme(self.theme["maze_colors"])
+        return self.theme["maze_colors"]
 
     def locations_theme(self) -> Dict:
-        self.edit_hex_theme(self.thm["locations"])
-        return self.thm["locations"]
+        self.edit_hex_theme(self.theme["locations"])
+        return self.theme["locations"]
 
     def menu_theme(self) -> Dict:
-        menu_colors = self.thm["menu_colors"]
+        menu_colors = self.theme["menu_colors"]
         for key, val in menu_colors.items():
             if key == "bg":
                 menu_colors[key] = self.__get_rgb_bg(val)
             else:
                 menu_colors[key] = self.__get_text_color(val)
-        return self.thm["menu_colors"]
+        return self.theme["menu_colors"]

@@ -1,10 +1,11 @@
-from common import Dir, Action, Cell
+from common import Dir, Action, CellType
 from typing import List
 
 
-class MazeCell(Cell):
+class MazeCell():
     def __init__(self, x: int, y: int, hex_val: str = "F") -> None:
-        super().__init__(hex_val)
+        self.value: int = int(hex_val, 16)
+        self.type: CellType = CellType.NORMAL
         self.neighbor: tuple = ()
         self.x = x
         self.y = y
@@ -25,7 +26,8 @@ class MazeCell(Cell):
         elif self.neighbor[0] > self.x:
             return Dir.E
 
-    def get_neighbor(self, maze: List[List['MazeCell']], dir: Dir) -> 'MazeCell':
+    def get_neighbor(self,
+                     maze: List[List['MazeCell']], dir: Dir) -> 'MazeCell':
         neighbor: MazeCell = None
         if dir == Dir.E and self.x + 1 < len(maze[0]):
             neighbor = maze[self.y][self.x + 1]

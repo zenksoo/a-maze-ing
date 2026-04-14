@@ -42,6 +42,11 @@ def lock_fortytwo_blocks(maze: List[List[MazeCell]]) -> None:
             maze[y][x].type = CellType.LOCKED
 
 
+def rand_dir() -> Dir:
+    all_choise = [Dir.N, Dir.E, Dir.S, Dir.W]
+    return random.choice(all_choise)
+
+
 class MazeGenerator:
     def __init__(self, config: Dict, theme: Themes = Themes.DEFAULT,
                  with_animation: bool = True) -> None:
@@ -49,6 +54,11 @@ class MazeGenerator:
         self.theme: Themes = theme
         self.config = config
         self.with_animation = with_animation
+        self.seed = self.config.get("SEED")
+        if not self.seed:
+            self.seed = int(time.time())
+
+        random.seed(self.seed)
 
     def __output_file_generator(self) -> None:
         with open("test.txt", "w") as f:
@@ -77,59 +87,56 @@ class MazeGenerator:
                 row_cells.append(MazeCell(x, y))
             self.maze.append(row_cells)
 
-        if self.with_animation:
-            from ascii_art import AsciiArt
-            art = AsciiArt(self.maze, self.theme)
-
         lock_fortytwo_blocks(self.maze)
 
         for row in self.maze:
             for cell in row:
-                if cell.type != CellType.LOCKED:
-                    next_cell = cell.get_neighbor(self.maze, Dir.E)
+                if cell.type == CellType.LOCKED:
+                    continue
+                next_cell = cell.get_neighbor(self.maze, Dir.E)
+                if next_cell and next_cell.type != CellType.LOCKED:
+                    cell.edit_wall(Dir.E, Action.OPEN)
+                    next_cell.edit_wall(Dir.W, Action.OPEN)
+                elif next_cell and next_cell.type == CellType.LOCKED:
+                    tmp_cell = cell
+                    x, y = (cell.x, cell.y)
+                    while next_cell and next_cell.type == CellType.LOCKED:
+                        next_cell = tmp_cell.get_neighbor(self.maze, Dir.S)
+                        if next_cell.type == CellType.LOCKED:
+                            tmp_cell.neighbor = (x - 1, y)
+                        tmp_cell = self.maze[y][x - 1]
+                        x -= 1
                     if next_cell and next_cell.type != CellType.LOCKED:
-                        cell.edit_wall(Dir.E, Action.OPEN)
-                        next_cell.edit_wall(Dir.W, Action.OPEN)
-                    elif next_cell and next_cell.type == CellType.LOCKED:
-                        tmp_cell = cell
-                        x, y = (cell.x, cell.y)
-                        while next_cell and next_cell.type == CellType.LOCKED:
-                            next_cell = tmp_cell.get_neighbor(self.maze, Dir.S)
-                            if next_cell.type == CellType.LOCKED:
-                                tmp_cell.neighbor = (x - 1, y)
-                            tmp_cell = self.maze[y][x - 1]
-                            x -= 1
-                        if next_cell and next_cell.type != CellType.LOCKED:
-                            self.maze[y][x].edit_wall(Dir.S, Action.OPEN)
-                            next_cell.edit_wall(Dir.N, Action.OPEN)
-                    elif not next_cell:
-                        next_cell = cell.get_neighbor(self.maze, Dir.S)
-                        if next_cell:
-                            cell.edit_wall(Dir.S, Action.OPEN)
-                            next_cell.edit_wall(Dir.N, Action.OPEN)
+                        self.maze[y][x].edit_wall(Dir.S, Action.OPEN)
+                        next_cell.edit_wall(Dir.N, Action.OPEN)
+                elif not next_cell:
+                    next_cell = cell.get_neighbor(self.maze, Dir.S)
                     if next_cell:
-                        next_cell.type = CellType.ORIGIN
-                        if cell.neighbor == ():
-                            cell.neighbor = (next_cell.x, next_cell.y)
-                        try:
-                            if self.with_animation:
-                                art.render()
-                        except KeyboardInterrupt:
-                            self.with_animation = False
-                        next_cell.type = CellType.NORMAL
-                    cell.type = CellType.NORMAL
+                        cell.edit_wall(Dir.S, Action.OPEN)
+                        next_cell.edit_wall(Dir.N, Action.OPEN)
+                if next_cell:
+                    next_cell.type = CellType.ORIGIN
+                    if cell.neighbor == ():
+                        cell.neighbor = (next_cell.x, next_cell.y)
+                    next_cell.type = CellType.NORMAL
+                cell.type = CellType.NORMAL
 
     def origin_shift(self) -> None:
         """
             ORIGIN SHIFT ALGO TO GENERATE THE BERFECT MAZE BY SEED
-                if you give them wrong seed generate random seed depends on your wrong seed
+                if you give them wrong seed generate random seed depends on
+                your wrong seed
                 if you don't give them seed it take random seed and use them
-            the origin cell have four dirs to choise someone randomly depends on seed
-                - after choising direction i get the neighber that next the origin cell from this direction
+            the origin cell have four dirs to choise someone randomly depends
+              on seed
+                - after choising direction i get the neighber that next the
+                origin cell from this direction
                 - i choise another neighbor:
                     - if neightbor is locked or none choise another one
-                    - if the neighbor of the choising neighbor is the origin cell
-            start from the origin cell and start move the origin flag to the next neighbor
+                    - if the neighbor of the choising neighbor is the origin
+                    cell
+            start from the origin cell and start move the origin flag to the
+            next neighbor
 
         """
         origin = self.maze[len(self.maze) - 1][len(self.maze[0]) - 1]
@@ -138,25 +145,29 @@ class MazeGenerator:
             from ascii_art import AsciiArt
             art = AsciiArt(self.maze, self.theme)
 
-        seed = self.config.get("SEED")
-        if not seed:
-            seed = random.uniform(1, 5)
-        elif seed < 1 or seed > 10:
-            random.seed(seed)
-            seed = random.uniform(1, 5)
-        while seed > 0:
-            random.seed(seed)
-            all_choise = [Dir.N, Dir.E, Dir.S, Dir.W]
-            neighbor = origin.get_neighbor(self.maze, random.choice(all_choise))
-            while (neighbor and neighbor.type == CellType.LOCKED) or not neighbor:
-                neighbor = origin.get_neighbor(self.maze, random.choice(all_choise))
-            while neighbor.neighbor == () and neighbor.neighbor == (origin.x, origin.y):
-                neighbor = origin.get_neighbor(self.maze, random.choice(all_choise))
+        corns = [0, 0, 0, 4]
+        while not all(corns) or (all(corns) and corns[3] > 0):
+            neighbor = origin.get_neighbor(self.maze, rand_dir())
+            while ((neighbor and neighbor.type == CellType.LOCKED)
+                   or not neighbor):
+                neighbor = origin.get_neighbor(self.maze, rand_dir())
+            while (neighbor.neighbor == () and
+                   neighbor.neighbor == (origin.x, origin.y)):
+                neighbor = origin.get_neighbor(self.maze, rand_dir())
 
             origin.neighbor = (neighbor.x, neighbor.y)
             origin.update_all_walls(self.maze)
             origin.type = CellType.ORIGIN
-            seed -= 0.0008
+
+            if (origin.x, origin.y) == (0, 0):
+                corns[0] = 1
+            elif (origin.x, origin.y) == (len(self.maze[0]) - 1, 0):
+                corns[1] = 1
+            elif (origin.x, origin.y) == (0, len(self.maze) - 1):
+                corns[2] = 1
+
+            if all(corns):
+                corns[3] -= 0.2
             try:
                 if self.with_animation:
                     art.render()

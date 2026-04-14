@@ -1,15 +1,14 @@
 from typing import List, TextIO
-import io
-import sys
-from common import Themes, CellType, Cell
+from common import Themes, CellType
 from ascii_art.ThemePicker import ThemePicker
+import sys
+import io
 
 
-class AsciiCell(Cell):
+class AsciiCell:
     def __init__(self, hex_val: str = "F") -> None:
-        super().__init__(hex_val)
-        if self.value == 15:
-            self.type = CellType.LOCKED
+        self.value: int = int(hex_val, 16)
+        self.type: CellType = CellType.NORMAL
 
 
 def cells_gen(cells_str: str) -> List[List[AsciiCell]]:
@@ -50,12 +49,12 @@ def cells_gen(cells_str: str) -> List[List[AsciiCell]]:
 
 def print_blk(color: str, inch: int) -> None:
     DEFAULT = "\033[49m"
-    print(f"{color}", " " * inch, DEFAULT, sep="", end="")
+    sys.stdout.write(f"{color}" + " " * inch + DEFAULT)
     sys.stdout.flush()
 
 
 class AsciiArt:
-    def __init__(self, config: str | TextIO | List[List[Cell]],
+    def __init__(self, config: str | TextIO | List[List[AsciiCell]],
                  theme: Themes = Themes.MIDNIGHT_OCEAN) -> None:
         self.theme: Themes = theme
         self.PAD = 2
@@ -118,7 +117,7 @@ class AsciiArt:
                 print_blk(WALL, 2)
                 print_blk(SHADOW, 1)
                 print_blk(PADDING, self.PAD * 4)
-                print(flush=True)
+                sys.stdout.write("\n")
 
         print_blk(PADDING, self.PAD * 4)
         for cell in self.maze[self.height - 1]:
@@ -130,16 +129,16 @@ class AsciiArt:
         print_blk(WALL, 2)
         print_blk(SHADOW, 1)
         print_blk(PADDING, self.PAD * 4)
-        print(flush=True)
+        sys.stdout.write("\n")
 
         # bottom badding
         print_blk(PADDING, self.PAD * 4)
         print_blk(SHADOW, (self.width * 6) + 3)
         print_blk(PADDING, self.PAD * 4)
-        print(flush=True)
+        sys.stdout.write("\n")
         for _ in range(0, 2):
             print_blk(PADDING, ((self.PAD * 4) * 2) + (self.width * 6) + 3)
-            print(flush=True)
+            sys.stdout.write("\n")
 
     def animation_menu(self):
         pass
