@@ -38,6 +38,9 @@ def validate(config: Dict[str, Any]) -> Dict:
 
 
 def parse(file_name: str) -> Dict:
+    """
+        Parse the Configue file and make it suported by mazegenerator
+    """
     config = {}
     try:
         with open(file_name, 'r') as file:

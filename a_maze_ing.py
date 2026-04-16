@@ -1,5 +1,5 @@
-from mazegen import MazeGenerator, AsciiArt, Menu
-from mazegen.ascii_art import THEMS
+from mazegenerator import MazeGenerator, AsciiArt, Menu
+from mazegenerator.ascii_art import THEMS
 import termios
 import sys
 import tty
@@ -19,7 +19,7 @@ def start_printing() -> None:
 
 def render_maze(maze: MazeGenerator, show_path: bool = False) -> None:
     art = AsciiArt(open(maze.config["OUTPUT_FILE"], "r"), maze.theme)
-    art.render(show_path)
+    art.maze_rendring(show_path)
 
 
 def get_key() -> str:
@@ -43,6 +43,7 @@ def display_menu(theme: str, type: int = 0) -> None:
         menu.banner("\033[1m [r] Re-generate")
         menu.banner("[a] Maze Animation")
         menu.banner("[s] Show Solution")
+        print("\n\n")
         menu.banner("[S] Animated Solution")
         menu.banner("[c] Change Theme")
         menu.banner("[q] Exit")
@@ -120,7 +121,7 @@ def a_maze_ing(theme: str) -> None:
     maze.generate()
     with open(maze.config["OUTPUT_FILE"], 'r') as f:
         art = AsciiArt(f, maze.theme)
-        art.render(False)
+        art.maze_rendring(False)
     main_menu(maze, art)
 
 

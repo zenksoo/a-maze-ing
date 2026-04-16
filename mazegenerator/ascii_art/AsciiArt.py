@@ -1,7 +1,7 @@
 from typing import List, TextIO
-from mazegen.MazeCell import MazeCell
+from mazegenerator.MazeCell import MazeCell
 from .ThemePicker import ThemePicker
-from mazegen.edit_cell_type import walls_value, setup_cell_type, get_cell_type
+from mazegenerator.edit_cell_type import walls_value, setup_cell_type, get_cell_type
 import sys
 import io
 
@@ -73,7 +73,7 @@ class AsciiArt:
         else:
             raise ValueError("Invalid Config For AsciiArt")
 
-    def render(self, show_path: bool = False) -> None:
+    def maze_rendring(self, show_path: bool = False) -> None:
         picker = ThemePicker(self.theme)
         maze_theme = picker.maze_theme().values()
         CELL, ROAD, WALL, OWALLS, PADDING, BACKDROP, SHADOW, VISITED = maze_theme

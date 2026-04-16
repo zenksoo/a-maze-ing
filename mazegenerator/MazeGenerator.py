@@ -1,7 +1,7 @@
 from typing import List
 from .MazeCell import MazeCell, Dir, Action
 from .edit_cell_type import setup_cell_type, get_cell_type, walls_value
-from mazegen.ascii_art import AsciiArt
+from .ascii_art import AsciiArt
 from .config_parser import parse
 import random
 import time
@@ -45,6 +45,31 @@ def lock_fortytwo_blocks(maze: List[List[MazeCell]]) -> None:
             setup_cell_type(maze[y][x], 'l')
 
 
+
+
+def get_next_cell(maze: List[List['MazeCell']],
+                  curr: tuple[int, int],
+                  dir: Dir) -> 'MazeCell' | None:
+    neighbor: MazeCell | None = None
+    x, y = (curr[0], curr[1])
+    if dir == Dir.E and x + 1 < len(maze[0]):
+        neighbor = maze[y][x + 1]
+    elif dir == Dir.W and x - 1 >= 0:
+        neighbor = maze[y][x - 1]
+    elif dir == Dir.N and y - 1 >= 0:
+        neighbor = maze[y - 1][x]
+    elif dir == Dir.S and y + 1 < len(maze):
+        neighbor = maze[y + 1][x]
+
+    return neighbor
+
+
+
+
+
+
+
+
 class MazeGenerator:
     def __init__(self, config_file_name: str, theme: str = "DEFAULT",
                  with_animation: bool = False) -> None:
@@ -54,6 +79,8 @@ class MazeGenerator:
         self.with_animation = with_animation
         self.seed = self.config.get("SEED")
         self.art: AsciiArt | None = None
+        self.entry: tuple[int, int] = [-1, -1]
+        self.exit: tuple[int, int] = [-1, -1]
         self.solution: List[tuple[int, int]] = []
 
     def __output_file_generator(self) -> None:
@@ -65,17 +92,17 @@ class MazeGenerator:
             f.write("\n")
             f.write(f"{self.config["ENTRY"][0]},{self.config["ENTRY"][1]}\n")
             f.write(f"{self.config["EXIT"][0]},{self.config["EXIT"][1]}\n")
-            start = self.solution[0]
-            for road_part in self.solution[1:]:
-                if start[0] < road_part[0]:
+            curr_cell = self.solution[0]
+            for next_cell in self.solution[1:]:
+                if curr_cell[0] < next_cell[0]:
                     f.write("E")
-                elif start[0] > road_part[0]:
+                elif curr_cell[0] > next_cell[0]:
                     f.write("W")
-                elif start[1] > road_part[1]:
+                elif curr_cell[1] > next_cell[1]:
                     f.write("N")
-                elif start[1] < road_part[1]:
+                elif curr_cell[1] < next_cell[1]:
                     f.write("S")
-                start = road_part
+                curr_cell = next_cell
 
     def init_maze(self) -> None:
         """
@@ -96,18 +123,17 @@ class MazeGenerator:
 
         lock_fortytwo_blocks(self.maze)
 
-        entry = self.config["ENTRY"]
-        exit = self.config["EXIT"]
+        self.entry = self.config["ENTRY"]
+        self.exit = self.config["EXIT"]
 
-        if (get_cell_type(self.maze[entry[1]][entry[0]]) == 'l' or
-                get_cell_type(self.maze[exit[1]][exit[0]]) == 'l'):
-            raise ValueError("invalid coordinate")
+        if (get_cell_type(self.maze[self.entry[1]][self.entry[0]]) == 'l' or
+                get_cell_type(self.maze[self.exit[1]][self.exit[0]]) == 'l'):
+            raise ValueError("The Start | Exit Coordinate in the Locked Cells")
 
-        for row in self.maze:
-            for cell in row:
+        for row, y in zip(self.maze, range(0, len(self.maze))):
+            for cell, x in zip(row, range(0, len(row))):
                 if get_cell_type(cell) == 'l':
                     continue
-                x, y = (cell.x, cell.y)
                 next_cell = cell.get_next_cell(self.maze, Dir.E)
                 if next_cell and get_cell_type(next_cell) != 'l':
                     cell.edit_wall(Dir.E, Action.OPEN)
@@ -182,7 +208,7 @@ class MazeGenerator:
             setup_cell_type(active_cell, 'o')
 
             if self.with_animation:
-                self.art.render()
+                self.art.maze_rendring()
             setup_cell_type(active_cell, 'n')
             if all(visited_corners):
                 finall_delay -= 0.02
@@ -250,7 +276,7 @@ class MazeGenerator:
                     neighbor.f      = neighbor.g + neighbor.h
                     heappush(openlist, neighbor)
             if with_animation:
-                self.art.render()
+                self.art.maze_rendring()
                 time.sleep(0.01)
         return None
 
@@ -258,7 +284,7 @@ class MazeGenerator:
         for x, y in self.solution[1:-1]:
             setup_cell_type(self.maze[y][x], 'r')
             if with_animation:
-                self.art.render(True)
+                self.art.maze_rendring(True)
                 time.sleep(0.02)
 
     def maze_solution(self, with_animation: bool = False) -> None:
