@@ -33,7 +33,7 @@ def get_key() -> str:
     return ch
 
 
-def display_menu(theme, type: int = 0):
+def display_menu(theme: str, type: int = 0) -> None:
     menu = Menu(theme)
     if type == 1:
         for i, theme_name in zip(range(0, len(THEMS)), THEMS):
@@ -42,13 +42,14 @@ def display_menu(theme, type: int = 0):
     else:
         menu.banner("\033[1m [r] Re-generate")
         menu.banner("[a] Maze Animation")
-        menu.banner("[s] Show/Hide Path")
+        menu.banner("[s] Show Solution")
+        menu.banner("[S] Animated Solution")
         menu.banner("[c] Change Theme")
         menu.banner("[q] Exit")
     print("\n\n")
 
 
-def change_theme_menu(theme) -> str | None:
+def change_theme_menu(theme: str) -> str | None:
     while True:
         start_printing()
         display_menu(theme, 1)
@@ -96,6 +97,8 @@ def main_menu(maze: MazeGenerator, art: AsciiArt) -> None:
             else:
                 show_path = True
             render_maze(maze, show_path)
+        elif ch == "S":
+            maze.maze_solution(True)
         elif ch == "c":
             new_theme = change_theme_menu(maze.theme)
             if new_theme:
@@ -107,9 +110,10 @@ def main_menu(maze: MazeGenerator, art: AsciiArt) -> None:
             break
 
 
-def a_maze_ing(theme: str):
+def a_maze_ing(theme: str) -> None:
     print(CLEAR_DOWN, end='', flush=True)
     sys.stdout.write("\033[0J\033[H")
+    print(CLEAR_LINE, end='', flush=True)
     if len(sys.argv) != 2:
         raise ValueError("argvvvv")
     maze = MazeGenerator(sys.argv[1], theme, False)
@@ -121,4 +125,8 @@ def a_maze_ing(theme: str):
 
 
 if __name__ == "__main__":
+    # try:
     a_maze_ing(THEMS[0])
+    # except (Exception, IOError) as e:
+    #     print("\033[101m  ERROR  \033[49m ", end="")
+    #     print(e)

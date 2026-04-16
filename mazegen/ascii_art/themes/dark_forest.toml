@@ -6,6 +6,8 @@ open_walls = "#CDCACA"
 padding  = "#1E4D3A"
 backdrop = "#E4E7E5"
 shadow   = "#163B2C"
+visited = "#DF9797"
+
 
 [locations]
 start  = "#7CFC00"

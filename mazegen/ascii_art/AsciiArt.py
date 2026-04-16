@@ -1,7 +1,7 @@
 from typing import List, TextIO
 from mazegen.MazeCell import MazeCell
 from .ThemePicker import ThemePicker
-from mazegen.edit_cell_type import *
+from mazegen.edit_cell_type import walls_value, setup_cell_type, get_cell_type
 import sys
 import io
 
@@ -14,8 +14,8 @@ CLEAR_DOWN = "\033[J"
 
 def cells_gen(cells_str: str) -> List[List[MazeCell]]:
     cells: List[List[MazeCell]] = []
-    locations: List[tuple] = []
-    road: str = None
+    locations = []
+    road: str = ""
 
     x = y = 0
     for line in cells_str.splitlines():
@@ -63,7 +63,7 @@ class AsciiArt:
         if isinstance(config, io.IOBase):
             config = config.read()
         if isinstance(config, str):
-            self.maze: List[List[Cell]] = cells_gen(config)
+            self.maze: List[List[MazeCell]] = cells_gen(config)
             self.w = len(self.maze[0])
             self.h = len(self.maze)
         elif isinstance(config, list):
@@ -73,14 +73,14 @@ class AsciiArt:
         else:
             raise ValueError("Invalid Config For AsciiArt")
 
-    def render(self, show_path: bool = False):
+    def render(self, show_path: bool = False) -> None:
         picker = ThemePicker(self.theme)
         maze_theme = picker.maze_theme().values()
-        CELL, ROAD, WALL, OWALLS, PADDING, BACKDROP, SHADOW = maze_theme
+        CELL, ROAD, WALL, OWALLS, PADDING, BACKDROP, SHADOW, VISITED = maze_theme
         ENTRY, EXIT = picker.locations_theme().values()
         self.PAD = 2
 
-        def generate_blk(color: str, inch: int) -> None:
+        def generate_blk(color: str, inch: int) -> str:
             return f"{color}" + " " * inch + "\033[49m"
 
         def display_maze_information() -> None:
@@ -117,6 +117,10 @@ class AsciiArt:
                                     or
                                get_cell_type(self.maze[h - 1][w]) == 's')):
                                 buff += generate_blk(ROAD, 4)
+                            elif ((get_cell_type(cell) == 's' or get_cell_type(cell) == 'e')
+                                  and show_path and get_cell_type(self.maze[h - 1][w]) == 'r'):
+                                    buff += generate_blk(ROAD, 4)
+
                             else:
                                 buff += generate_blk(OWALLS, 4)
                     else:
@@ -124,7 +128,9 @@ class AsciiArt:
                             buff += generate_blk(WALL, 2)
                         else:
                             if (get_cell_type(cell) == 'r' and show_path and
-                               get_cell_type(self.maze[h][w - 1]) == 'r'):
+                               (get_cell_type(self.maze[h][w - 1]) == 'r' or
+                                get_cell_type(self.maze[h][w - 1]) == 's' or
+                                get_cell_type(self.maze[h][w - 1])== 'e')):
                                 buff += generate_blk(ROAD, 2)
 
                             else:
@@ -139,6 +145,8 @@ class AsciiArt:
                             buff += generate_blk(EXIT, 4)
                         elif get_cell_type(cell) == 'r' and show_path:
                             buff += generate_blk(ROAD, 4)
+                        elif get_cell_type(cell) == 'v':
+                            buff += generate_blk(VISITED, 4)
                         else:
                             buff += generate_blk(BACKDROP, 4)
                 buff += generate_blk(WALL, 2)

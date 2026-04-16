@@ -1,3 +1,5 @@
+from typing import Dict, Any
+
 REQUIREDKEYS = ['WIDTH', 'HEIGHT', 'ENTRY', 'EXIT', 'OUTPUT_FILE', 'PERFECT']
 OPTIONALKEYS = ['SEED', 'ALGORITHM' 'D_MODE']
 VALIDATORS = {
@@ -23,7 +25,7 @@ CONFIG = {
 }
 
 
-def validate(config: dict) -> dict:
+def validate(config: Dict[str, Any]) -> Dict:
     for key in REQUIREDKEYS:
         if key not in config:
             raise ValueError(f"{key}")
@@ -35,23 +37,26 @@ def validate(config: dict) -> dict:
     return config
 
 
-def parse(file_name: str) -> dict:
+def parse(file_name: str) -> Dict:
     config = {}
-    with open(file_name, 'r') as file:
-        lines = file.readlines()
-        for line in lines:
-            line = line.strip()
+    try:
+        with open(file_name, 'r') as file:
+            lines = file.readlines()
+            for line in lines:
+                line = line.strip()
 
-            if not line or line.startswith('#'):
-                continue
-            elif '=' not in line:
-                raise ValueError(f"Invalid line: '{line}'")
+                if not line or line.startswith('#'):
+                    continue
+                elif '=' not in line:
+                    raise ValueError(f"Invalid line: '{line}'")
 
-            key, value = [ele.strip() for ele in line.split('=', 1)]
+                key, value = [ele.strip() for ele in line.split('=', 1)]
 
-            if not (key in REQUIREDKEYS) and not (key in OPTIONALKEYS):
-                raise ValueError(f"Invalid key: '{key}'")
-            if key in VALIDATORS and VALIDATORS[key](value):
-                config[key] = value
+                if not (key in REQUIREDKEYS) and not (key in OPTIONALKEYS):
+                    raise ValueError(f"Invalid key: '{key}'")
+                if key in VALIDATORS and VALIDATORS[key](value):
+                    config[key] = value
+        return validate(config)
+    except (Exception, IOError) as e:
+        raise ValueError(f"Feilad to Parcing Config: {e}")
 
-    return validate(config)

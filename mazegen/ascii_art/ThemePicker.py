@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Any
 import tomllib
 from pathlib import Path
 
@@ -10,7 +10,7 @@ class ThemePicker:
     def __init__(self, theme: str) -> None:
         theme_path: str = f"{PARENT_PATH}/themes/{theme.lower()}.toml"
         with open(theme_path, 'rb') as f:
-            self.theme = tomllib.load(f)
+            self.theme: Dict[str, Dict[Any, Any]] = tomllib.load(f)
 
     @staticmethod
     def __get_rgb_bg(hex_color: str) -> str:
@@ -28,19 +28,19 @@ class ThemePicker:
 
         return f"\033[38;2;{r};{g};{b}m"
 
-    def edit_hex_theme(self, theme: Dict) -> None:
+    def edit_hex_theme(self, theme: Dict[Any, Any]) -> None:
         for key, val in theme.items():
             theme[key] = self.__get_rgb_bg(val)
 
-    def maze_theme(self) -> Dict:
+    def maze_theme(self) -> Dict[Any, Any]:
         self.edit_hex_theme(self.theme["maze_colors"])
         return self.theme["maze_colors"]
 
-    def locations_theme(self) -> Dict:
+    def locations_theme(self) -> Dict[Any, Any]:
         self.edit_hex_theme(self.theme["locations"])
         return self.theme["locations"]
 
-    def menu_theme(self) -> Dict:
+    def menu_theme(self) -> Dict[Any, Any]:
         menu_colors = self.theme["menu_colors"]
         for key, val in menu_colors.items():
             if key == "bg":
