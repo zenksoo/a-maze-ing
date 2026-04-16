@@ -1,7 +1,8 @@
-from typing import List, Dict
+from typing import List
 from .MazeCell import MazeCell, Dir, Action
-from .edit_cell_bits import setup_cell_bits, get_cell_type, walls_value
-import importlib
+from .edit_cell_type import setup_cell_type, get_cell_type, walls_value
+from mazegen.ascii_art import AsciiArt
+from .config_parser import parse
 import random
 import time
 
@@ -39,29 +40,20 @@ def lock_fortytwo_blocks(maze: List[List[MazeCell]]) -> None:
         for block in num:
             x, y = block
             maze[y][x].close_all(maze)
-            setup_cell_bits(maze[y][x], 'l')
-
-
-def rand_dir() -> Dir:
-    all_choise = [Dir.N, Dir.E, Dir.S, Dir.W]
-    return random.choice(all_choise)
+            setup_cell_type(maze[y][x], 'l')
 
 
 class MazeGenerator:
-    def __init__(self, config: Dict, theme: str = "DEFAULT",
+    def __init__(self, config_file_name: str, theme: str = "DEFAULT",
                  with_animation: bool = False) -> None:
         self.maze: List[List[MazeCell]] = []
         self.theme = theme
-        self.config = config
+        self.config = parse(config_file_name)
         self.with_animation = with_animation
         self.seed = self.config.get("SEED")
-        if not self.seed:
-            self.seed = int(time.time())
-
-        random.seed(self.seed)
 
     def __output_file_generator(self) -> None:
-        with open("test.txt", "w") as f:
+        with open(self.config["OUTPUT_FILE"], "w") as f:
             for row in self.maze:
                 for cell in row:
                     f.write("0123456789ABCDEF"[walls_value(cell)])
@@ -88,6 +80,7 @@ class MazeGenerator:
             self.maze.append(row_cells)
 
         lock_fortytwo_blocks(self.maze)
+
         entry = self.config["ENTRY"]
         exit = self.config["EXIT"]
 
@@ -97,9 +90,9 @@ class MazeGenerator:
 
         for row in self.maze:
             for cell in row:
-                x, y = cell.coor
                 if get_cell_type(cell) == 'l':
                     continue
+                x, y = cell.coor
                 next_cell = cell.get_neighbor(self.maze, Dir.E)
                 if next_cell and get_cell_type(next_cell) != 'l':
                     cell.edit_wall(Dir.E, Action.OPEN)
@@ -110,10 +103,10 @@ class MazeGenerator:
                         next_cell = tmp_cell.get_neighbor(self.maze, Dir.S)
                         if get_cell_type(next_cell) == 'l':
                             tmp_cell.neighbor = (x - 1, y)
-                        tmp_cell = self.maze[y][x - 1]
+                            tmp_cell = self.maze[y][x - 1]
                         x -= 1
                     if next_cell and get_cell_type(next_cell) != 'l':
-                        self.maze[y][x].edit_wall(Dir.S, Action.OPEN)
+                        tmp_cell.edit_wall(Dir.S, Action.OPEN)
                         next_cell.edit_wall(Dir.N, Action.OPEN)
                 elif not next_cell:
                     next_cell = cell.get_neighbor(self.maze, Dir.S)
@@ -123,7 +116,7 @@ class MazeGenerator:
                 if next_cell:
                     if cell.neighbor == ():
                         cell.neighbor = (next_cell.coor[0], next_cell.coor[1])
-                    setup_cell_bits(next_cell, 'n')
+                    setup_cell_type(next_cell, 'n')
 
     def origin_shift(self) -> None:
         """
@@ -143,51 +136,56 @@ class MazeGenerator:
             next neighbor
 
         """
-        origin = self.maze[len(self.maze) - 1][len(self.maze[0]) - 1]
+        art = AsciiArt(self.maze, self.theme)
+        active_cell = self.maze[len(self.maze) - 1][len(self.maze[0]) - 1]
 
-        if self.with_animation:
-            from ascii_art import AsciiArt
-            art = AsciiArt(self.maze, self.theme)
+        def rand_dir() -> Dir:
+            directions = [Dir.N, Dir.E, Dir.S, Dir.W]
+            return random.choice(directions)
 
-        corns = [0, 0, 0, 4]
-        while not all(corns) or (all(corns) and corns[3] > 0):
-            x, y = origin.coor
-            neighbor = origin.get_neighbor(self.maze, rand_dir())
-            while ((neighbor and get_cell_type(neighbor) == 'l')
-                   or not neighbor):
-                neighbor = origin.get_neighbor(self.maze, rand_dir())
+        visited_corners = [0, 0, 0, 4]
+        while (not all(visited_corners) or
+               (all(visited_corners) and visited_corners[3] > 0)):
+            x, y = active_cell.coor
+            next_cell = active_cell.get_neighbor(self.maze, rand_dir())
+            while ((next_cell and get_cell_type(next_cell) == 'l')
+                   or not next_cell):
+                next_cell = active_cell.get_neighbor(self.maze, rand_dir())
 
-            origin.neighbor = (neighbor.coor[0], neighbor.coor[1])
-            origin.update_all_walls(self.maze)
+            active_cell.neighbor = (next_cell.coor[0], next_cell.coor[1])
+            active_cell.update_all_walls(self.maze)
 
             if (x, y) == (0, 0):
-                corns[0] = 1
+                visited_corners[0] = 1
             elif (x, y) == (len(self.maze[0]) - 1, 0):
-                corns[1] = 1
+                visited_corners[1] = 1
             elif (x, y) == (0, len(self.maze) - 1):
-                corns[2] = 1
+                visited_corners[2] = 1
 
-            setup_cell_bits(origin, 'o')
-            try:
-                if self.with_animation:
-                    art.render()
-            except KeyboardInterrupt:
-                self.with_animation = False
-            setup_cell_bits(origin, 'n')
-            origin = neighbor
-            if all(corns):
-                corns[3] -= 0.002
+            active_cell = next_cell
+            setup_cell_type(active_cell, 'o')
 
-    def generate(self) -> None:
-        if self.with_animation:
-            try:
-                _ = importlib.import_module("ascii_art.AsciiArt")
-            except ImportError:
-                self.with_animation = False
+            if self.with_animation:
+                art.render()
+            setup_cell_type(active_cell, 'n')
+            if all(visited_corners):
+                visited_corners[3] -= 0.02
+
+    def maze_solution(self) -> None:
+        pass
+
+    def generate(self, seed: float | None = None) -> None:
+        if seed:
+            self.seed = seed
+        elif not self.config.get("SEED"):
+            self.seed = time.time()
+        random.seed(self.seed)
+        self.maze = []
         self.init_maze()
         self.origin_shift()
         x, y = self.config["ENTRY"]
-        setup_cell_bits(self.maze[y][x], 's')
+        setup_cell_type(self.maze[y][x], 's')
         x, y = self.config["EXIT"]
-        setup_cell_bits(self.maze[y][x], 'e')
+        setup_cell_type(self.maze[y][x], 'e')
+        self.maze_solution()
         self.__output_file_generator()

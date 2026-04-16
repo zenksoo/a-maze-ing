@@ -14,7 +14,7 @@ class Action(Enum):
     CLOSE = 1
 
 
-class MazeCell():
+class MazeCell:
     def __init__(self, x: int, y: int, hex_val: str = "F") -> None:
         self.value: int = int(hex_val, 16)
         self.neighbor: tuple = ()

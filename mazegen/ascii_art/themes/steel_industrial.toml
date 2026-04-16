@@ -1,0 +1,17 @@
+[maze_colors]
+cell     = "#444B52"
+road     = "#2AA876"
+wall     = "#22272B"
+open_walls = "#CDCACA"
+padding  = "#444B52"
+backdrop = "#E0E0E0"
+shadow   = "#2F343A"
+
+[locations]
+start  = "#FFD166"
+end    = "#00B4C8"
+
+[menu_colors]
+text   = "#FFFFFF"
+button = "#3AAFA9"
+bg     = "#444B52"
