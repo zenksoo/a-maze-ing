@@ -1,5 +1,5 @@
-from mazegenerator import MazeGenerator, AsciiArt, Menu
-from mazegenerator.ascii_art import THEMS
+from mazegenerator import MazeGenerator, MazeRenderer, Menu
+from mazegenerator import THEMS
 import termios
 import sys
 import tty
@@ -18,8 +18,8 @@ def start_printing() -> None:
 
 
 def render_maze(maze: MazeGenerator, show_path: bool = False) -> None:
-    art = AsciiArt(open(maze.config["OUTPUT_FILE"], "r"), maze.theme)
-    art.maze_rendring(show_path)
+    art = MazeRenderer(open(maze.config["OUTPUT_FILE"], "r"), maze.theme)
+    art.render(show_path)
 
 
 def get_key() -> str:
@@ -40,13 +40,17 @@ def display_menu(theme: str, type: int = 0) -> None:
             menu.banner(f"[{i}] {theme_name.lower()}")
         menu.banner("[q] Exit")
     else:
-        menu.banner("\033[1m [r] Re-generate")
-        menu.banner("[a] Maze Animation")
-        menu.banner("[s] Show Solution")
-        print("\n\n")
-        menu.banner("[S] Animated Solution")
-        menu.banner("[c] Change Theme")
-        menu.banner("[q] Exit")
+        all_options = {
+            "[r]": "Re-generate",
+            "[a]": "Maze Animation",
+            "[s]": "Show Solution",
+            "[S]": "Animated Solution",
+            "[c]": "Change Theme",
+            "[q]": "Exit"
+        }
+        for key, val in all_options.items():
+            menu.banner(f"{key} {val}")
+            print(end="    ")
     print("\n\n")
 
 
@@ -67,7 +71,7 @@ def change_theme_menu(theme: str) -> str | None:
             continue
 
 
-def main_menu(maze: MazeGenerator, art: AsciiArt) -> None:
+def main_menu(maze: MazeGenerator, art: MazeRenderer) -> None:
     show_path = False
     print(SAVE_CURSOR, end='', flush=True)
     while True:
@@ -76,7 +80,7 @@ def main_menu(maze: MazeGenerator, art: AsciiArt) -> None:
         ch = get_key()
         if ch == "r":
             maze.with_animation = False
-            maze.generate()
+            maze.run()
             render_maze(maze)
         elif ch == "a":
             animate = 'y'
@@ -89,7 +93,7 @@ def main_menu(maze: MazeGenerator, art: AsciiArt) -> None:
                or len(maze.maze) * len(maze.maze[0]) <= 1000):
                 print(CLEAR_DOWN, end='', flush=True)
                 maze.with_animation = True
-                maze.generate(maze.seed)
+                maze.run(maze.seed)
                 render_maze(maze)
                 maze.with_animation = False
         elif ch == "s":
@@ -99,7 +103,7 @@ def main_menu(maze: MazeGenerator, art: AsciiArt) -> None:
                 show_path = True
             render_maze(maze, show_path)
         elif ch == "S":
-            maze.maze_solution(True)
+            maze.find_and_mark_solution(True)
         elif ch == "c":
             new_theme = change_theme_menu(maze.theme)
             if new_theme:
@@ -118,10 +122,10 @@ def a_maze_ing(theme: str) -> None:
     if len(sys.argv) != 2:
         raise ValueError("argvvvv")
     maze = MazeGenerator(sys.argv[1], theme, False)
-    maze.generate()
+    maze.run()
     with open(maze.config["OUTPUT_FILE"], 'r') as f:
-        art = AsciiArt(f, maze.theme)
-        art.maze_rendring(False)
+        art = MazeRenderer(f, maze.theme)
+        art.render(False)
     main_menu(maze, art)
 
 

@@ -1,19 +1,19 @@
-from typing import List
 from .MazeCell import MazeCell, Dir, Action
-from .edit_cell_type import setup_cell_type, get_cell_type, walls_value
-from .ascii_art import AsciiArt
+from .cell_encoding import set_cell_type, get_cell_type, get_wall_bits
+from .MazeRenderer import MazeRenderer
 from .config_parser import parse
+from typing import List
 import random
 import time
-from math import sqrt
 from heapq import heappush, heappop
 
 
-def lock_fortytwo_blocks(maze: List[List[MazeCell]]) -> None:
+def lock_logo_cells(maze: List[List[MazeCell]]) -> None:
+    """Lock the cells that form the '42' logo shape in the center of the maze."""
     st_x = int((len(maze[0]) - 7) / 2)
     st_y = int((len(maze) - 5) / 2)
 
-    ROUR = [
+    FOUR_COORDS = [
         (st_x, st_y),
         (st_x, st_y + 1),
         (st_x, st_y + 2),
@@ -24,7 +24,7 @@ def lock_fortytwo_blocks(maze: List[List[MazeCell]]) -> None:
     ]
 
     st_x += 4
-    TWO = [
+    TWO_COORDS = [
         (st_x, st_y),
         (st_x + 1, st_y),
         (st_x + 2, st_y),
@@ -38,36 +38,11 @@ def lock_fortytwo_blocks(maze: List[List[MazeCell]]) -> None:
         (st_x + 2, st_y + 4),
     ]
 
-    for num in [ROUR, TWO]:
+    for num in [FOUR_COORDS, TWO_COORDS]:
         for block in num:
             x, y = block
             maze[y][x].close_all(maze)
-            setup_cell_type(maze[y][x], 'l')
-
-
-
-
-def get_next_cell(maze: List[List['MazeCell']],
-                  curr: tuple[int, int],
-                  dir: Dir) -> 'MazeCell' | None:
-    neighbor: MazeCell | None = None
-    x, y = (curr[0], curr[1])
-    if dir == Dir.E and x + 1 < len(maze[0]):
-        neighbor = maze[y][x + 1]
-    elif dir == Dir.W and x - 1 >= 0:
-        neighbor = maze[y][x - 1]
-    elif dir == Dir.N and y - 1 >= 0:
-        neighbor = maze[y - 1][x]
-    elif dir == Dir.S and y + 1 < len(maze):
-        neighbor = maze[y + 1][x]
-
-    return neighbor
-
-
-
-
-
-
+            set_cell_type(maze[y][x], 'l')
 
 
 class MazeGenerator:
@@ -78,16 +53,19 @@ class MazeGenerator:
         self.config = parse(config_file_name)
         self.with_animation = with_animation
         self.seed = self.config.get("SEED")
-        self.art: AsciiArt | None = None
+        self.art: MazeRenderer | None = None
         self.entry: tuple[int, int] = [-1, -1]
         self.exit: tuple[int, int] = [-1, -1]
         self.solution: List[tuple[int, int]] = []
+        if not self.seed:
+            self.seed = time.time()
+        random.seed(self.seed)
 
-    def __output_file_generator(self) -> None:
+    def __save_maze_to_file(self) -> None:
         with open(self.config["OUTPUT_FILE"], "w") as f:
             for row in self.maze:
                 for cell in row:
-                    f.write("0123456789ABCDEF"[walls_value(cell)])
+                    f.write("0123456789ABCDEF"[get_wall_bits(cell)])
                 f.write("\n")
             f.write("\n")
             f.write(f"{self.config["ENTRY"][0]},{self.config["ENTRY"][1]}\n")
@@ -104,16 +82,11 @@ class MazeGenerator:
                     f.write("S")
                 curr_cell = next_cell
 
-    def init_maze(self) -> None:
-        """
-        initialize the maze for origin shift algo
-        open all the cells from right
-            - if the next right block is locked try to open from bottom
-            - if the next bottom block is locked move back to (x - n, y)
-                to find the bottom block that not locked and open it
+    def build_maze_grid(self) -> None:
+        """Initialize the grid and connect cells using the origin-shift algorithm setup.
 
-            the open means i open from direction of the current cell and from
-            direction of next block [ right | bottom ]
+            Creates all MazeCell objects, locks the logo cells, then opens walls
+            between adjacent cells to prepare for path generation.
         """
         for y in range(0, self.config["HEIGHT"]):
             row_cells = []
@@ -121,7 +94,7 @@ class MazeGenerator:
                 row_cells.append(MazeCell(x, y))
             self.maze.append(row_cells)
 
-        lock_fortytwo_blocks(self.maze)
+        lock_logo_cells(self.maze)
 
         self.entry = self.config["ENTRY"]
         self.exit = self.config["EXIT"]
@@ -157,64 +130,64 @@ class MazeGenerator:
                 if next_cell:
                     if cell.neighbor == (-1, -1):
                         cell.neighbor = (next_cell.x, next_cell.y)
-                    setup_cell_type(next_cell, 'n')
+                    set_cell_type(next_cell, 'n')
 
     def origin_shift(self) -> None:
-        """
-            ORIGIN SHIFT ALGO TO GENERATE THE BERFECT MAZE BY SEED
-                if you give them wrong seed generate random seed depends on
-                your wrong seed
-                if you don't give them seed it take random seed and use them
-            the origin cell have four dirs to choise someone randomly depends
-              on seed
-                - after choising direction i get the neighber that next the
-                origin cell from this direction
-                - i choise another neighbor:
-                    - if neightbor is locked or none choise another one
-                    - if the neighbor of the choising neighbor is the origin
-                    cell
-            start from the origin cell and start move the origin flag to the
-            next neighbor
+        """Generate a perfect maze using the origin-shift algorithm.
 
+            Moves the origin cell randomly until all three corners have been visited,
+            then runs a cooldown period to ensure full maze coverage.
         """
-        self.art = AsciiArt(self.maze, self.theme)
-        active_cell = self.maze[len(self.maze) - 1][len(self.maze[0]) - 1]
+        self.art = MazeRenderer(self.maze, self.theme)
+        origin_cell = self.maze[len(self.maze) - 1][len(self.maze[0]) - 1]
+        visited = set()
+
+        visited.add((origin_cell.x, origin_cell.y))
 
         def rand_dir() -> Dir:
             directions = [Dir.N, Dir.E, Dir.S, Dir.W]
             return random.choice(directions)
 
-        visited_corners: List[int] = [0, 0, 0]
-        finall_delay: int | float = 4
-        while (not all(visited_corners) or
-               (all(visited_corners) and finall_delay > 0)):
-            x, y = (active_cell.x, active_cell.y)
-            next_cell = active_cell.get_next_cell(self.maze, rand_dir())
+        corner_flags: List[int] = [0, 0, 0]
+        cooldown: int | float = 4
+        while len(visited) < (self.config["WIDTH"] * self.config["HEIGHT"] - 18):
+            x, y = (origin_cell.x, origin_cell.y)
+            next_cell = origin_cell.get_next_cell(self.maze, rand_dir())
             while ((next_cell and get_cell_type(next_cell) == 'l')
                    or not next_cell):
-                next_cell = active_cell.get_next_cell(self.maze, rand_dir())
+                next_cell = origin_cell.get_next_cell(self.maze, rand_dir())
 
-            active_cell.neighbor = (next_cell.x, next_cell.y)
-            active_cell.update_all_walls(self.maze)
+            origin_cell.neighbor = (next_cell.x, next_cell.y)
+            origin_cell.sync_walls(self.maze)
 
             if (x, y) == (0, 0):
-                visited_corners[0] = 1
+                corner_flags[0] = 1
             elif (x, y) == (len(self.maze[0]) - 1, 0):
-                visited_corners[1] = 1
+                corner_flags[1] = 1
             elif (x, y) == (0, len(self.maze) - 1):
-                visited_corners[2] = 1
+                corner_flags[2] = 1
 
-            active_cell = next_cell
-            setup_cell_type(active_cell, 'o')
-
+            origin_cell = next_cell
+            set_cell_type(origin_cell, 'o')
             if self.with_animation:
-                self.art.maze_rendring()
-            setup_cell_type(active_cell, 'n')
-            if all(visited_corners):
-                finall_delay -= 0.02
+                self.art.render()
+            set_cell_type(origin_cell, 'n')
+            if all(corner_flags):
+                cooldown -= 0.02
+            visited.add((origin_cell.x, origin_cell.y))
 
-    def astar(self, start: MazeCell, end: MazeCell, with_animation: bool = False) -> None:
-        self.art = AsciiArt(self.maze, self.theme)
+    def solve_maze(self, start: MazeCell,
+                   end: MazeCell,
+                   with_animation: bool = False
+                   ) -> List[tuple[int, int]] | None:
+        """Find the shortest path from start to end using A*.
+
+            Returns:
+                Ordered list of (x, y) coordinates from start to end,
+                or None if no path exists.
+        """
+
+        self.art = MazeRenderer(self.maze, self.theme)
         for row in self.maze:
             for cell in row:
                 cell.reset()
@@ -229,7 +202,7 @@ class MazeGenerator:
         def heuristic(a, b):
             return abs(a.x - b.x) + abs(a.y - b.y)
 
-        def get_all_neighbors(curr: MazeCell) -> List:
+        def get_open_neighbors(curr: MazeCell) -> List:
             all_neighbors = []
             x, y = (curr.x, curr.y)
             if not curr.value  & 1 and y - 1 >= 0:
@@ -241,81 +214,83 @@ class MazeGenerator:
             if not (curr.value >> 3 & 1) and x - 1 >= 0:
                 all_neighbors.append(self.maze[y][x - 1])
 
-            for ele in all_neighbors:
-                if get_cell_type(ele) != 's' and get_cell_type(ele) != 'e':
-                    setup_cell_type(ele, 'v')
+            for neighbor in all_neighbors:
+                if (get_cell_type(neighbor) != 's' and
+                    get_cell_type(neighbor) != 'e'):
+                    set_cell_type(neighbor, 'v')
             return all_neighbors
 
         start.g = 0
         start.h = heuristic(start, end)
         start.f = start.h
 
-        openlist = [start]
-        closed = set()
+        open_list = [start]
+        closed_set = set()
 
-        while openlist:
-            current = heappop(openlist)
+        while open_list:
+            current = heappop(open_list)
 
             if current == end:
                 return reconstruct_path(current)
 
-            closed.add((current.x, current.y))
-            all_neighbors: List[MazeCell] = get_all_neighbors(current)
-            all_neighbors = [(e.x, e.y) for e in all_neighbors]
+            closed_set.add((current.x, current.y))
+            open_neighbors: List[MazeCell] = get_open_neighbors(current)
+            open_neighbors = [(e.x, e.y) for e in open_neighbors]
 
-            for nx, ny in all_neighbors:
+            for nx, ny in open_neighbors:
                 neighbor = self.maze[ny][nx]
 
-                if neighbor in closed:
+                if (neighbor.x, neighbor.y) in closed_set:
                     continue
-                next_step = current.g + 1
-                if next_step < neighbor.g:
+                tentative_g = current.g + 1
+                if tentative_g < neighbor.g:
                     neighbor.parent = current
-                    neighbor.g      = next_step
+                    neighbor.g      = tentative_g
                     neighbor.h      = heuristic(neighbor, end)
                     neighbor.f      = neighbor.g + neighbor.h
-                    heappush(openlist, neighbor)
+                    heappush(open_list, neighbor)
             if with_animation:
-                self.art.maze_rendring()
-                time.sleep(0.01)
+                self.art.render()
+                time.sleep(0.0025)
         return None
 
-    def setup_road(self, with_animation: bool = False):
+    def mark_solution_path(self, with_animation: bool = False):
         for x, y in self.solution[1:-1]:
-            setup_cell_type(self.maze[y][x], 'r')
+            set_cell_type(self.maze[y][x], 'r')
             if with_animation:
-                self.art.maze_rendring(True)
-                time.sleep(0.02)
+                self.art.render(True)
+                time.sleep(0.002)
 
-    def maze_solution(self, with_animation: bool = False) -> None:
+    def find_and_mark_solution(self, with_animation: bool = False) -> None:
             st_x, st_y = self.config["ENTRY"]
-            setup_cell_type(self.maze[st_y][st_x], 's')
+            set_cell_type(self.maze[st_y][st_x], 's')
             ed_x, ed_y = self.config["EXIT"]
-            setup_cell_type(self.maze[ed_y][ed_x], 'e')
+            set_cell_type(self.maze[ed_y][ed_x], 'e')
             start = self.maze[st_y][st_x]
             end = self.maze[ed_y][ed_x]
 
-            self.solution = self.astar(start, end, with_animation)
+            self.solution = self.solve_maze(start, end, with_animation)
             if not self.solution:
                 raise ValueError("NO Path between Entry and Exit")
-            self.setup_road(with_animation)
+            self.mark_solution_path(with_animation)
             for row in self.maze:
                 for cell in row:
                     if get_cell_type(cell) == 'v':
-                        setup_cell_type(cell, 'n')
+                        set_cell_type(cell, 'n')
 
-    def generate(self, seed: float | None = None) -> None:
+    def run(self, seed: float | None = None) -> None:
+        """Run the full maze pipeline — build, generate, solve, and save.
+
+            Args:
+                seed: Optional seed override. Falls back to config or current time.
+        """
         if seed:
             self.seed = seed
         elif not self.config.get("SEED"):
             self.seed = time.time()
-        random.seed(self.seed)
+
         self.maze = []
-        self.init_maze()
+        self.build_maze_grid()
         self.origin_shift()
-        self.maze_solution()
-        self.__output_file_generator()
-
-
-
-
+        self.find_and_mark_solution()
+        self.__save_maze_to_file()

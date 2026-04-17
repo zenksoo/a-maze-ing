@@ -15,6 +15,6 @@ class Menu:
         picker = ThemePicker(self.theme_name)
         self.theme = picker.menu_theme()
 
-    def banner(self, txt: str, end: bool = False) -> None:
-        print(f"{self.theme["bg"]}{self.theme["text"]} ",
-              f"{txt}  \033[49m", end="   ")
+    def banner(self, txt: str) -> None:
+        print(f"{self.theme["bg"]}{self.theme["text"]}",
+              f" {txt} \033[49m", sep="", end="")

@@ -5,7 +5,7 @@ debug:
 	python3 -m pdb a_maze_ing.py config.txt
 
 clean:
-	rm -rf __py* && rm -rf */__py* && rm -rf */*/__py*
+	rm -rf __py* && rm -rf */__py*
 	rm -rf .mypy_cache
 
 lint:
