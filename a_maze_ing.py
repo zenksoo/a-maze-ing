@@ -10,6 +10,15 @@ RESTORE_CURSOR = "\033[u"
 CLEAR_LINE = "\033[K"
 CLEAR_DOWN = "\033[J"
 
+def get_key() -> str:
+    fd = sys.stdin.fileno()
+    original = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, original)
+    return ch
 
 def start_printing() -> None:
     print(RESTORE_CURSOR, end='', flush=True)
@@ -22,15 +31,6 @@ def render_maze(maze: MazeGenerator, show_path: bool = False) -> None:
     art.render(show_path)
 
 
-def get_key() -> str:
-    fd = sys.stdin.fileno()
-    original = termios.tcgetattr(fd)
-    try:
-        tty.setraw(fd)
-        ch = sys.stdin.read(1)
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, original)
-    return ch
 
 
 def display_menu(theme: str, type: int = 0) -> None:
@@ -42,7 +42,7 @@ def display_menu(theme: str, type: int = 0) -> None:
     else:
         all_options = {
             "[r]": "Re-generate",
-            "[a]": "Maze Animation",
+            "[R]": "Maze Animation",
             "[s]": "Show Solution",
             "[S]": "Animated Solution",
             "[c]": "Change Theme",
@@ -51,7 +51,7 @@ def display_menu(theme: str, type: int = 0) -> None:
         for key, val in all_options.items():
             menu.banner(f"{key} {val}")
             print(end="    ")
-    print("\n\n")
+    print(": ")
 
 
 def change_theme_menu(theme: str) -> str | None:
@@ -71,6 +71,23 @@ def change_theme_menu(theme: str) -> str | None:
             continue
 
 
+def re_generate_by_animation(maze: MazeGenerator) -> None:
+    animate = 'y'
+    if len(maze.maze) * len(maze.maze[0]) > 1000:
+        start_printing()
+        print("\033[34mthe size of maze is large,",
+            "continue ? (y/n): \033[39m")
+        animate = get_key()
+    if (animate.lower() == "y"
+    or len(maze.maze) * len(maze.maze[0]) <= 1000):
+        print(CLEAR_DOWN, end='', flush=True)
+        maze.with_animation = True
+        maze.run(maze.seed)
+        render_maze(maze)
+        maze.with_animation = False
+
+
+
 def main_menu(maze: MazeGenerator, art: MazeRenderer) -> None:
     show_path = False
     print(SAVE_CURSOR, end='', flush=True)
@@ -82,20 +99,8 @@ def main_menu(maze: MazeGenerator, art: MazeRenderer) -> None:
             maze.with_animation = False
             maze.run()
             render_maze(maze)
-        elif ch == "a":
-            animate = 'y'
-            if len(maze.maze) * len(maze.maze[0]) > 1000:
-                start_printing()
-                print("\033[34mthe size of maze is large,",
-                      "continue ? (y/n): \033[39m")
-                animate = get_key()
-            if (animate.lower() == "y"
-               or len(maze.maze) * len(maze.maze[0]) <= 1000):
-                print(CLEAR_DOWN, end='', flush=True)
-                maze.with_animation = True
-                maze.run(maze.seed)
-                render_maze(maze)
-                maze.with_animation = False
+        elif ch == "R":
+            re_generate_by_animation(maze)
         elif ch == "s":
             if show_path:
                 show_path = False
@@ -120,7 +125,8 @@ def a_maze_ing(theme: str) -> None:
     sys.stdout.write("\033[0J\033[H")
     print(CLEAR_LINE, end='', flush=True)
     if len(sys.argv) != 2:
-        raise ValueError("argvvvv")
+        usage = "python3 a_maze_ing.py config.txt"
+        raise ValueError(f"Missing Config File [ {usage} ]")
     maze = MazeGenerator(sys.argv[1], theme, False)
     maze.run()
     with open(maze.config["OUTPUT_FILE"], 'r') as f:
@@ -130,8 +136,8 @@ def a_maze_ing(theme: str) -> None:
 
 
 if __name__ == "__main__":
-    # try:
-    a_maze_ing(THEMS[0])
-    # except (Exception, IOError) as e:
-    #     print("\033[101m  ERROR  \033[49m ", end="")
-    #     print(e)
+    try:
+        a_maze_ing(THEMS[0])
+    except (Exception, IOError) as e:
+        print("\033[101m  ERROR  \033[49m ", end="")
+        print(e)

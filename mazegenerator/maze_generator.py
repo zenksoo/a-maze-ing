@@ -130,6 +130,7 @@ class MazeGenerator:
                 if next_cell:
                     if cell.neighbor == (-1, -1):
                         cell.neighbor = (next_cell.x, next_cell.y)
+                        cell.sync_walls(self.maze)
                     set_cell_type(next_cell, 'n')
 
     def origin_shift(self) -> None:
@@ -148,10 +149,7 @@ class MazeGenerator:
             directions = [Dir.N, Dir.E, Dir.S, Dir.W]
             return random.choice(directions)
 
-        corner_flags: List[int] = [0, 0, 0]
-        cooldown: int | float = 4
         while len(visited) < (self.config["WIDTH"] * self.config["HEIGHT"] - 18):
-            x, y = (origin_cell.x, origin_cell.y)
             next_cell = origin_cell.get_next_cell(self.maze, rand_dir())
             while ((next_cell and get_cell_type(next_cell) == 'l')
                    or not next_cell):
@@ -160,20 +158,12 @@ class MazeGenerator:
             origin_cell.neighbor = (next_cell.x, next_cell.y)
             origin_cell.sync_walls(self.maze)
 
-            if (x, y) == (0, 0):
-                corner_flags[0] = 1
-            elif (x, y) == (len(self.maze[0]) - 1, 0):
-                corner_flags[1] = 1
-            elif (x, y) == (0, len(self.maze) - 1):
-                corner_flags[2] = 1
-
             origin_cell = next_cell
+            origin_cell.sync_walls(self.maze)
             set_cell_type(origin_cell, 'o')
             if self.with_animation:
                 self.art.render()
             set_cell_type(origin_cell, 'n')
-            if all(corner_flags):
-                cooldown -= 0.02
             visited.add((origin_cell.x, origin_cell.y))
 
     def solve_maze(self, start: MazeCell,
