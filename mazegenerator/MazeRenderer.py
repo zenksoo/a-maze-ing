@@ -88,7 +88,7 @@ class MazeRenderer:
             self.w = len(self.maze[0])
             self.h = len(self.maze)
         else:
-            raise ValueError("Invalid Config For AsciiArt")
+            raise ValueError("Invalid Config For MazeRandering")
 
     def render(self, show_path: bool = False) -> None:
         picker = ThemePicker(self.theme)
@@ -105,7 +105,7 @@ class MazeRenderer:
                   "  \033[49m    ", end="")
             print(f"{PADDING}   Height: {len(self.maze)}",
                   "  \033[49m    ", end="")
-            print(f"{PADDING}   Theme: {self.theme}   \033[49m    ")
+            print(f"{PADDING}   Theme: {self.theme}   \033[49m    \n")
         print("\033[?25l ")
         sys.stdout.write("\033[0J\033[H")
         print(CLEAR_LINE, end="", flush=True)
@@ -126,7 +126,7 @@ class MazeRenderer:
                     cell = self.maze[h][w]
                     if cell_row == 0:
                         frame += colored_block(WALL, 2)
-                        if cell.value >> 0 & 1:
+                        if cell.value & 1:
                             frame += colored_block(WALL, 4)
                         else:
                             if (get_cell_type(cell) == 'r' and show_path
@@ -135,16 +135,17 @@ class MazeRenderer:
                                get_cell_type(self.maze[h - 1][w]) == 's')):
                                 frame += colored_block(ROAD, 4)
                             elif ((get_cell_type(cell) == 's' or get_cell_type(cell) == 'e')
-                                  and show_path and get_cell_type(self.maze[h - 1][w]) == 'r'):
+                                  and show_path and (get_cell_type(self.maze[h - 1][w]) == 'r')
+                                  or get_cell_type(self.maze[])):
                                     frame += colored_block(ROAD, 4)
-
                             else:
                                 frame += colored_block(OWALLS, 4)
                     else:
                         if cell.value >> 3 & 1:
                             frame += colored_block(WALL, 2)
                         else:
-                            if (get_cell_type(cell) == 'r' and show_path and
+                            if ((get_cell_type(cell) == 'r' or
+                                 get_cell_type(cell) == 'e') and show_path and
                                (get_cell_type(self.maze[h][w - 1]) == 'r' or
                                 get_cell_type(self.maze[h][w - 1]) == 's' or
                                 get_cell_type(self.maze[h][w - 1])== 'e')):
@@ -185,7 +186,6 @@ class MazeRenderer:
         frame += colored_block(PADDING, PAD * 4)
         frame += "\n"
 
-        # bottom badding
         frame += colored_block(PADDING, PAD * 3)
         frame += colored_block(SHADOW, (self.w * 6) + 5)
         frame += colored_block(PADDING, PAD * 4)
@@ -193,7 +193,5 @@ class MazeRenderer:
         for _ in range(0, 2):
             frame += colored_block(PADDING, frame_width)
             frame += "\n"
-
-        print("\033[?25l ")
 
         print(frame)

@@ -67,60 +67,41 @@ class MazeCell:
         elif not (self.value >> dir.value & 1) and action == Action.CLOSE:
             self.value += 2 ** dir.value
 
-    def get_dir(self) -> Dir | None:
-        x, y = (self.x, self.y)
-        if self.neighbor[1] < y:
-            return Dir.N
-        elif self.neighbor[1] > y:
-            return Dir.S
-        elif self.neighbor[0] < x:
-            return Dir.W
-        elif self.neighbor[0] > x:
-            return Dir.E
-        return None
-
-    def get_next_cell(self, maze: List[List['MazeCell']],
-                     dir: Dir) -> 'MazeCell' | None:
-        """
-            Return the adjacent cell in a given direction, or None if out of bounds.
-            Args:
-                maze: The full 2D maze grid.
-                dir:  Direction to step toward.
-        """
-        neighbor: MazeCell | None = None
-        x, y = (self.x, self.y)
-        if dir == Dir.E and x + 1 < len(maze[0]):
-            neighbor = maze[y][x + 1]
-        elif dir == Dir.W and x - 1 >= 0:
-            neighbor = maze[y][x - 1]
-        elif dir == Dir.N and y - 1 >= 0:
-            neighbor = maze[y - 1][x]
-        elif dir == Dir.S and y + 1 < len(maze):
-            neighbor = maze[y + 1][x]
-
-        return neighbor
-
-    def close_all(self, maze: List[List['MazeCell']]) -> None:
-        curr_dirs = [Dir.N, Dir.S, Dir.E, Dir.W]
-        opposite_dirs = [Dir.E, Dir.W, Dir.N, Dir.S]
-        for curr_dir, next_dir in zip(curr_dirs, opposite_dirs):
-            self.edit_wall(curr_dir, Action.CLOSE)
-            neighbor = self.get_next_cell(maze, curr_dir)
-            if neighbor:
-                neighbor.edit_wall(next_dir, Action.CLOSE)
+    def get_all_neighbors(self, maze: List[List['MazeCell']]) -> tuple[Dir, 'MazeCell']:
+                all_neighbors = []
+                x, y = (self.x, self.y)
+                if y - 1 >= 0:
+                    all_neighbors.append((Dir.N, maze[y - 1][x]))
+                if x + 1 < len(maze[0]):
+                    all_neighbors.append((Dir.E, maze[y][x + 1]))
+                if y + 1 < len(maze):
+                    all_neighbors.append((Dir.S, maze[y + 1][x]))
+                if x - 1 >= 0:
+                    all_neighbors.append((Dir.W, maze[y][x - 1]))
+                return all_neighbors
 
     def sync_walls(self, maze: List[List['MazeCell']]) -> None:
         """Open the wall toward this cell's neighbor and close all others."""
-        dir = self.get_dir()
-        x, y = (self.x, self.y)
-        curr_dirs = [Dir.N, Dir.E, Dir.S, Dir.W]
-        neigh_dirs = [Dir.S, Dir.W, Dir.N, Dir.E]
+        all_neighbors: List[(Dir, 'MazeCell')] = self.get_all_neighbors(maze)
+        origin = [Dir.N, Dir.E, Dir.S, Dir.W]
+        reversed_dirs = [Dir.S, Dir.W, Dir.N, Dir.E]
+        for dir, node in all_neighbors:
+            if node.neighbor == (self.x, self.y):
+                node.edit_wall(reversed_dirs[origin.index(dir)], Action.OPEN)
+                self.edit_wall(dir, Action.OPEN)
+            else:
+                node.edit_wall(reversed_dirs[origin.index(dir)], Action.CLOSE)
+                self.edit_wall(dir, Action.CLOSE)
 
-        for curr_dir, neigh_dir in zip(curr_dirs, neigh_dirs):
-            neighbor = self.get_next_cell(maze, curr_dir)
-            if curr_dir == dir:
-                self.edit_wall(curr_dir, Action.OPEN)
-                neighbor.edit_wall(neigh_dir, Action.OPEN)
-            elif neighbor and (x, y) != neighbor.neighbor:
-                self.edit_wall(curr_dir, Action.CLOSE)
-                neighbor.edit_wall(neigh_dir, Action.CLOSE)
+    def get_open_neighbors(self, maze: List[List['MazeCell']]) -> List:
+        all_neighbors = []
+        x, y = (self.x, self.y)
+        if not self.value  & 1 and y - 1 >= 0:
+            all_neighbors.append(maze[y - 1][x])
+        if not self.value >> 1 & 1 and x + 1 < len(maze[0]):
+            all_neighbors.append(maze[y][x + 1])
+        if not self.value >> 2 & 1 and y + 1 < len(maze):
+            all_neighbors.append(maze[y + 1][x])
+        if not (self.value >> 3 & 1) and x - 1 >= 0:
+            all_neighbors.append(maze[y][x - 1])
+        return all_neighbors

@@ -10,6 +10,7 @@ RESTORE_CURSOR = "\033[u"
 CLEAR_LINE = "\033[K"
 CLEAR_DOWN = "\033[J"
 
+
 def get_key() -> str:
     fd = sys.stdin.fileno()
     original = termios.tcgetattr(fd)
@@ -19,6 +20,7 @@ def get_key() -> str:
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, original)
     return ch
+
 
 def start_printing() -> None:
     print(RESTORE_CURSOR, end='', flush=True)
@@ -31,18 +33,17 @@ def render_maze(maze: MazeGenerator, show_path: bool = False) -> None:
     art.render(show_path)
 
 
-
-
 def display_menu(theme: str, type: int = 0) -> None:
     menu = Menu(theme)
     if type == 1:
         for i, theme_name in zip(range(0, len(THEMS)), THEMS):
-            menu.banner(f"[{i}] {theme_name.lower()}")
+            menu.banner(f"[{i}] {theme_name.lower()}  ")
+            print("    ", end="")
         menu.banner("[q] Exit")
     else:
         all_options = {
             "[r]": "Re-generate",
-            "[R]": "Maze Animation",
+            "[R]": "Re-Gen by Animation",
             "[s]": "Show Solution",
             "[S]": "Animated Solution",
             "[c]": "Change Theme",
@@ -51,7 +52,7 @@ def display_menu(theme: str, type: int = 0) -> None:
         for key, val in all_options.items():
             menu.banner(f"{key} {val}")
             print(end="    ")
-    print(": ")
+    print("\n\n Action : ", end="")
 
 
 def change_theme_menu(theme: str) -> str | None:
@@ -82,10 +83,9 @@ def re_generate_by_animation(maze: MazeGenerator) -> None:
     or len(maze.maze) * len(maze.maze[0]) <= 1000):
         print(CLEAR_DOWN, end='', flush=True)
         maze.with_animation = True
-        maze.run(maze.seed)
+        maze.run()
         render_maze(maze)
         maze.with_animation = False
-
 
 
 def main_menu(maze: MazeGenerator, art: MazeRenderer) -> None:
@@ -93,6 +93,7 @@ def main_menu(maze: MazeGenerator, art: MazeRenderer) -> None:
     print(SAVE_CURSOR, end='', flush=True)
     while True:
         start_printing()
+        print(maze.config["PERFECT"])
         display_menu(maze.theme)
         ch = get_key()
         if ch == "r":
@@ -118,6 +119,9 @@ def main_menu(maze: MazeGenerator, art: MazeRenderer) -> None:
             print(CLEAR_DOWN, end='')
             sys.stdout.write("\033[0J\033[H")
             break
+        elif ch == "x":
+            print(maze.seed)
+            sys.exit(1)
 
 
 def a_maze_ing(theme: str) -> None:
@@ -139,5 +143,6 @@ if __name__ == "__main__":
     try:
         a_maze_ing(THEMS[0])
     except (Exception, IOError) as e:
-        print("\033[101m  ERROR  \033[49m ", end="")
+        print("\033[41m  ERROR  \033[49m ", end="")
         print(e)
+        exit(1)
