@@ -1,8 +1,17 @@
-from mazegenerator import MazeGenerator, MazeRenderer, Menu
-from mazegenerator import THEMS
 import termios
 import sys
 import tty
+
+
+try:
+    from pydantic import ValidationError
+    from mazegenerator import MazeGenerator, Menu, MazeConfig, THEMS
+    from mazegenerator import MazeRenderer
+except ImportError as e:
+    print("\033[41m  ERROR  \033[49m ", end="")
+    print(f"\033[31mMissing dependency:\033[0m {e}")
+    print("Run: make install")
+    sys.exit(1)
 
 
 SAVE_CURSOR = "\033[s"
@@ -22,6 +31,22 @@ def get_key() -> str:
     return ch
 
 
+def get_config() -> MazeConfig:
+    argc = len(sys.argv)
+    if argc != 2:
+        raise ValueError("Usage: python a-maze-ing.py <config_file>")
+    try:
+        with open(sys.argv[1]) as f:
+            return MazeConfig.from_file(f)
+    except FileNotFoundError:
+        raise ValueError(f"Config file '{sys.argv[1]}' not found.")
+    except PermissionError:
+        msg = f"Error opening config file `{sys.argv[1]}`"
+        raise ValueError(msg, "Permission denied.")
+    except OSError as e:
+        raise ValueError(f"Error opening config file '{sys.argv[1]}': {e}")
+
+
 def start_printing() -> None:
     print(RESTORE_CURSOR, end='', flush=True)
     print(CLEAR_DOWN, end='', flush=True)
@@ -29,7 +54,7 @@ def start_printing() -> None:
 
 
 def render_maze(maze: MazeGenerator, show_path: bool = False) -> None:
-    art = MazeRenderer(open(maze.config["OUTPUT_FILE"], "r"), maze.theme)
+    art = MazeRenderer(maze.maze, maze.theme)
     art.render(show_path)
 
 
@@ -47,6 +72,7 @@ def display_menu(theme: str, type: int = 0) -> None:
             "[s]": "Show Solution",
             "[S]": "Animated Solution",
             "[c]": "Change Theme",
+            "[W]": "Write To File",
             "[q]": "Exit"
         }
         for key, val in all_options.items():
@@ -76,14 +102,14 @@ def re_generate_by_animation(maze: MazeGenerator) -> None:
     animate = 'y'
     if len(maze.maze) * len(maze.maze[0]) > 1000:
         start_printing()
-        print("\033[34mthe size of maze is large,",
-            "continue ? (y/n): \033[39m")
+        print("\033[31mthe size of maze is large,",
+              "continue ? (y/n): \033[39m")
         animate = get_key()
-    if (animate.lower() == "y"
-    or len(maze.maze) * len(maze.maze[0]) <= 1000):
+    if (animate.lower() == "y" or
+       len(maze.maze) * len(maze.maze[0]) <= 1000):
         print(CLEAR_DOWN, end='', flush=True)
         maze.with_animation = True
-        maze.run()
+        maze.generate()
         render_maze(maze)
         maze.with_animation = False
 
@@ -93,15 +119,16 @@ def main_menu(maze: MazeGenerator, art: MazeRenderer) -> None:
     print(SAVE_CURSOR, end='', flush=True)
     while True:
         start_printing()
-        print(maze.config["PERFECT"])
         display_menu(maze.theme)
         ch = get_key()
+
         if ch == "r":
             maze.with_animation = False
-            maze.run()
+            maze.generate()
             render_maze(maze)
         elif ch == "R":
             re_generate_by_animation(maze)
+
         elif ch == "s":
             if show_path:
                 show_path = False
@@ -110,38 +137,44 @@ def main_menu(maze: MazeGenerator, art: MazeRenderer) -> None:
             render_maze(maze, show_path)
         elif ch == "S":
             maze.find_and_mark_solution(True)
+
         elif ch == "c":
             new_theme = change_theme_menu(maze.theme)
             if new_theme:
                 maze.theme = new_theme
                 render_maze(maze)
+
+        elif ch.lower() == 'w':
+            maze.save_maze_to_file()
+
         elif ch.lower() == 'q':
             print(CLEAR_DOWN, end='')
             sys.stdout.write("\033[0J\033[H")
             break
-        elif ch == "x":
-            print(maze.seed)
-            sys.exit(1)
-
-
-def a_maze_ing(theme: str) -> None:
-    print(CLEAR_DOWN, end='', flush=True)
-    sys.stdout.write("\033[0J\033[H")
-    print(CLEAR_LINE, end='', flush=True)
-    if len(sys.argv) != 2:
-        usage = "python3 a_maze_ing.py config.txt"
-        raise ValueError(f"Missing Config File [ {usage} ]")
-    maze = MazeGenerator(sys.argv[1], theme, False)
-    maze.run()
-    with open(maze.config["OUTPUT_FILE"], 'r') as f:
-        art = MazeRenderer(f, maze.theme)
-        art.render(False)
-    main_menu(maze, art)
 
 
 if __name__ == "__main__":
+    sys.stdout.write("\033[0J\033[H")
+    print(CLEAR_LINE, end='', flush=True)
+
     try:
-        a_maze_ing(THEMS[0])
+        mzconf = get_config()
+        print(mzconf)
+    except ValidationError as e:
+        print("\033[41m  ERROR  \033[49m ", end="")
+        print(f"Maze config Error: {e.errors()[0]["msg"]}")
+        exit(1)
+    except ValueError as e:
+        print("\033[41m  ERROR  \033[49m ", end="")
+        print(f"Maze config Error: {e}")
+        exit(1)
+
+    try:
+        maze = MazeGenerator.from_object(mzconf, THEMS[0], False)
+        maze.generate()
+        art = MazeRenderer(maze.maze, maze.theme)
+        art.render(False)
+        main_menu(maze, art)
     except (Exception, IOError) as e:
         print("\033[41m  ERROR  \033[49m ", end="")
         print(e)

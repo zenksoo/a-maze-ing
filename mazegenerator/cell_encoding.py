@@ -17,7 +17,8 @@ def set_cell_type(cell: MazeCell, cell_type: str) -> None:
     """
         Encode a cell type into bits 4-7 of cell.value.
 
-        The four most-significant bits of the first byte encode type and access:
+        The four most-significant bits of the first
+        byte encode type and access:
 
             Bits 7-4   Type
             --------   ----
@@ -31,7 +32,8 @@ def set_cell_type(cell: MazeCell, cell_type: str) -> None:
 
         Args:
             cell:      The MazeCell to modify in place.
-            cell_type: Single character — one of 'n', 's', 'e', 'r', 'o', 'v', 'l'.
+            cell_type: Single character — one of
+            'n', 's', 'e', 'r', 'o', 'v', 'l'.
 
         Raises:
             ValueError: If cell_type is not a recognised character.
@@ -60,7 +62,6 @@ def set_cell_type(cell: MazeCell, cell_type: str) -> None:
         cell.value = clear_bit(cell.value, 6)
         cell.value = clear_bit(cell.value, 7)
 
-
     # binary of Road: 0011 ****
     elif cell_type.lower() == 'r':
         for i in range(4, 6):
@@ -75,10 +76,10 @@ def set_cell_type(cell: MazeCell, cell_type: str) -> None:
 
     # binary of visited: 1100 ****
     elif cell_type.lower() == 'v':
-        cell.value  = clear_bit(cell.value, 4)
-        cell.value  = clear_bit(cell.value, 5)
-        cell.value  = set_bit(cell.value, 6)
-        cell.value  = set_bit(cell.value, 7)
+        cell.value = clear_bit(cell.value, 4)
+        cell.value = clear_bit(cell.value, 5)
+        cell.value = set_bit(cell.value, 6)
+        cell.value = set_bit(cell.value, 7)
     else:
         raise ValueError(f"Unknown cell type: '{cell_type}'")
 

@@ -1,12 +1,61 @@
-from typing import List, TextIO
+from pathlib import Path
+from typing import List, Dict, Any, TextIO
+import tomllib
 from .MazeCell import MazeCell
-from .ThemePicker import ThemePicker
 from .cell_encoding import get_wall_bits, set_cell_type, get_cell_type
 import sys
 import io
 
 
+PARENT_PATH = Path(__file__).parent
 CLEAR_LINE = "\033[K"
+
+
+class ThemePicker:
+    def __init__(self, theme: str) -> None:
+        theme_path: str = f"{PARENT_PATH}/themes/{theme.lower()}.toml"
+        try:
+            with open(theme_path, 'rb') as f:
+                self.theme: Dict[str, Dict[Any, Any]] = tomllib.load(f)
+        except (Exception, IOError):
+            raise ValueError("Theme Not Found")
+
+    @staticmethod
+    def __get_rgb_bg(hex_color: str) -> str:
+        r = int(hex_color[1:3], 16)
+        g = int(hex_color[3:5], 16)
+        b = int(hex_color[5:7], 16)
+
+        return f"\033[48;2;{r};{g};{b}m"
+
+    @staticmethod
+    def __get_text_color(hex_color: str) -> str:
+        r = int(hex_color[1:3], 16)
+        g = int(hex_color[3:5], 16)
+        b = int(hex_color[5:7], 16)
+
+        return f"\033[38;2;{r};{g};{b}m"
+
+    def edit_hex_theme(self, theme: Dict[Any, Any]) -> None:
+        for key, val in theme.items():
+            theme[key] = self.__get_rgb_bg(val)
+
+    def maze_theme(self) -> Dict[Any, Any]:
+        self.edit_hex_theme(self.theme["maze_colors"])
+        return self.theme["maze_colors"]
+
+    def locations_theme(self) -> Dict[Any, Any]:
+        self.edit_hex_theme(self.theme["locations"])
+        return self.theme["locations"]
+
+    def menu_theme(self) -> Dict[Any, Any]:
+        menu_colors = self.theme["menu_colors"]
+        for key, val in menu_colors.items():
+            if key == "bg":
+                menu_colors[key] = self.__get_rgb_bg(val)
+            else:
+                menu_colors[key] = self.__get_text_color(val)
+        return self.theme["menu_colors"]
 
 
 def parse_maze_cells(cells_str: str) -> List[List[MazeCell]]:
@@ -63,6 +112,24 @@ def parse_maze_cells(cells_str: str) -> List[List[MazeCell]]:
     return cells
 
 
+class Menu:
+    def __init__(self, theme: str) -> None:
+        self.theme_name: str = theme
+        self.theme: Dict[Any, Any] = {}
+        self.bg = None
+        self.text = None
+        self.button = None
+        self.init_theme()
+
+    def init_theme(self) -> None:
+        picker = ThemePicker(self.theme_name)
+        self.theme = picker.menu_theme()
+
+    def banner(self, txt: str) -> None:
+        print(f"{self.theme["bg"]}{self.theme["text"]}",
+              f" {txt} \033[49m", sep="", end="")
+
+
 class MazeRenderer:
     """
         Renders a maze grid as colored ASCII blocks in the terminal.
@@ -70,8 +137,10 @@ class MazeRenderer:
         Supports multiple visual themes and optional path highlighting.
 
         Args:
-            config: A maze string, an open file, or a pre-built 2D MazeCell grid.
-            theme:  Name of the color theme to use. Defaults to 'royal_depth'.
+            config: A maze string, an open file,
+                    or a pre-built 2D MazeCell grid.
+            theme:  Name of the color theme to use.
+                    Defaults to 'royal_depth'.
     """
 
     def __init__(self, config: str | TextIO | List[List[MazeCell]],
@@ -93,7 +162,7 @@ class MazeRenderer:
     def render(self, show_path: bool = False) -> None:
         picker = ThemePicker(self.theme)
         maze_theme = picker.maze_theme().values()
-        CELL, ROAD, WALL, OWALLS, PADDING, BACKDROP, SHADOW, VISITED = maze_theme
+        CELL, ROAD, WALL, OWALLS, PAD_C, BG_C, SHADOW, VISITED = maze_theme
         ENTRY, EXIT = picker.locations_theme().values()
         PAD = 2
 
@@ -101,11 +170,11 @@ class MazeRenderer:
             return f"{color}" + " " * width + "\033[49m"
 
         def print_maze_stats() -> None:
-            print(f"\n{PADDING}   Width: {len(self.maze[0])}",
+            print(f"\n{PAD_C}   Width: {len(self.maze[0])}",
                   "  \033[49m    ", end="")
-            print(f"{PADDING}   Height: {len(self.maze)}",
+            print(f"{PAD_C}   Height: {len(self.maze)}",
                   "  \033[49m    ", end="")
-            print(f"{PADDING}   Theme: {self.theme}   \033[49m    \n")
+            print(f"{PAD_C}   Theme: {self.theme}   \033[49m    \n")
         print("\033[?25l ")
         sys.stdout.write("\033[0J\033[H")
         print(CLEAR_LINE, end="", flush=True)
@@ -115,64 +184,68 @@ class MazeRenderer:
         frame: str = ""
         frame_width = ((PAD * 4) * 2) + (self.w * 6) + 3
         for _ in range(0, 2):
-            frame += colored_block(PADDING, frame_width)
+            frame += colored_block(PAD_C, frame_width)
             frame += "\n"
 
         for h in range(0, self.h):
             for cell_row in range(0, 3):
-                frame += colored_block(PADDING, PAD * 3)
+                frame += colored_block(PAD_C, PAD * 3)
                 frame += colored_block(SHADOW, PAD)
                 for w in range(0, self.w):
                     cell = self.maze[h][w]
+                    cell_tp = get_cell_type(cell)
                     if cell_row == 0:
                         frame += colored_block(WALL, 2)
                         if cell.value & 1:
                             frame += colored_block(WALL, 4)
                         else:
-                            if (get_cell_type(cell) == 'r' and show_path
-                               and (get_cell_type(self.maze[h - 1][w]) == 'r'
-                                    or
-                               get_cell_type(self.maze[h - 1][w]) == 's')):
+                            tmp_cell_tp = get_cell_type(self.maze[h - 1][w])
+                            if (cell_tp == 'r' and show_path
+                               and (tmp_cell_tp == 'r' or tmp_cell_tp == 's')):
                                 frame += colored_block(ROAD, 4)
-                            elif ((get_cell_type(cell) == 's' or get_cell_type(cell) == 'e')
-                                  and show_path and (get_cell_type(self.maze[h - 1][w]) == 'r')
-                                  or get_cell_type(self.maze[])):
-                                    frame += colored_block(ROAD, 4)
+                            elif ((cell_tp == 's' or
+                                  cell_tp == 'e') and show_path
+                                  and tmp_cell_tp == 'r'):
+                                frame += colored_block(ROAD, 4)
+                            elif (cell_tp == 'r' and show_path and
+                                  (tmp_cell_tp == 's' or
+                                   tmp_cell_tp == 'e')):
+                                frame += colored_block(ROAD, 4)
                             else:
                                 frame += colored_block(OWALLS, 4)
                     else:
                         if cell.value >> 3 & 1:
                             frame += colored_block(WALL, 2)
                         else:
-                            if ((get_cell_type(cell) == 'r' or
-                                 get_cell_type(cell) == 'e') and show_path and
-                               (get_cell_type(self.maze[h][w - 1]) == 'r' or
-                                get_cell_type(self.maze[h][w - 1]) == 's' or
-                                get_cell_type(self.maze[h][w - 1])== 'e')):
+                            tmp_cell_tp = get_cell_type(self.maze[h][w - 1])
+                            if ((cell_tp == 'r' or
+                                 cell_tp == 'e' or
+                                 cell_tp == 's') and show_path and
+                               (tmp_cell_tp == 'r' or tmp_cell_tp == 's'
+                               or tmp_cell_tp == 'e')):
                                 frame += colored_block(ROAD, 2)
-
                             else:
                                 frame += colored_block(OWALLS, 2)
-                        if get_cell_type(cell) == 's':
+                        if cell_tp == 's':
                             frame += colored_block(ENTRY, 4)
-                        elif get_cell_type(cell) == 'o':
+                        elif cell_tp == 'o':
                             frame += colored_block(ENTRY, 4)
-                        elif get_cell_type(cell) == 'l':
+                        elif cell_tp == 'l':
                             frame += colored_block(CELL, 4)
-                        elif get_cell_type(cell) == 'e':
+                        elif cell_tp == 'e':
                             frame += colored_block(EXIT, 4)
-                        elif get_cell_type(cell) == 'r' and show_path:
+                        elif cell_tp == 'r' and show_path:
                             frame += colored_block(ROAD, 4)
-                        elif get_cell_type(cell) == 'v':
+                        elif cell_tp == 'v':
                             frame += colored_block(VISITED, 4)
                         else:
-                            frame += colored_block(BACKDROP, 4)
+                            frame += colored_block(BG_C, 4)
                 frame += colored_block(WALL, 2)
                 frame += colored_block(SHADOW, 1)
-                frame += colored_block(PADDING, PAD * 4)
+                frame += colored_block(PAD_C, PAD * 4)
                 frame += "\n"
 
-        frame += colored_block(PADDING, PAD * 3)
+        frame += colored_block(PAD_C, PAD * 3)
         frame += colored_block(SHADOW, PAD * 1)
 
         for cell in self.maze[self.h - 1]:
@@ -180,18 +253,18 @@ class MazeRenderer:
             if cell.value >> 2 & 1:
                 frame += colored_block(WALL, 4)
             else:
-                frame += colored_block(BACKDROP, 4)
+                frame += colored_block(BG_C, 4)
         frame += colored_block(WALL, 2)
         frame += colored_block(SHADOW, 1)
-        frame += colored_block(PADDING, PAD * 4)
+        frame += colored_block(PAD_C, PAD * 4)
         frame += "\n"
 
-        frame += colored_block(PADDING, PAD * 3)
+        frame += colored_block(PAD_C, PAD * 3)
         frame += colored_block(SHADOW, (self.w * 6) + 5)
-        frame += colored_block(PADDING, PAD * 4)
+        frame += colored_block(PAD_C, PAD * 4)
         frame += "\n"
         for _ in range(0, 2):
-            frame += colored_block(PADDING, frame_width)
+            frame += colored_block(PAD_C, frame_width)
             frame += "\n"
 
         print(frame)

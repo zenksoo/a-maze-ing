@@ -1,6 +1,6 @@
-from mazegenerator.maze_generator import MazeGenerator
-from mazegenerator.MazeRenderer import MazeRenderer, ThemePicker
-from mazegenerator.Menu import Menu
+from mazegenerator.MazeGenerator import MazeGenerator
+from mazegenerator.MazeRenderer import MazeRenderer, ThemePicker, Menu
+from mazegenerator.MazeConfig import MazeConfig
 
 
 THEMS = [
@@ -12,5 +12,5 @@ THEMS = [
     "steel_industrial"
     ]
 
-__all__ = ["MazeGenerator", "Maze",
+__all__ = ["MazeGenerator", "Maze", "MazeConfig",
            "MazeRenderer", "ThemePicker", "Menu"]
