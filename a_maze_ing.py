@@ -32,6 +32,10 @@ def get_key() -> str:
 
 
 def get_config() -> MazeConfig:
+    """ Parse the maze configuration from a file specified as a command-line argument.
+    The configuration file should be in key=value format, containing required keys:
+    WIDTH, HEIGHT, ENTRY, EXIT, OUTPUT_FILE, PERFECT.
+    """
     argc = len(sys.argv)
     if argc != 2:
         raise ValueError("Usage: python a-maze-ing.py <config_file>")
@@ -59,6 +63,12 @@ def render_maze(maze: MazeGenerator, show_path: bool = False) -> None:
 
 
 def display_menu(theme: str, type: int = 0) -> None:
+    """Display the main menu.
+
+    Args:
+        theme (str): The current theme.
+        type (int, optional): The type of menu to display. Defaults to 0.
+    """
     menu = Menu(theme)
     if type == 1:
         for i, theme_name in zip(range(0, len(THEMS)), THEMS):
@@ -82,6 +92,14 @@ def display_menu(theme: str, type: int = 0) -> None:
 
 
 def change_theme_menu(theme: str) -> str | None:
+    """Display a menu for changing the maze theme.
+
+    Args:
+        theme (str): The current theme.
+
+    Returns:
+        str | None: The new theme if selected, or None if the user chooses to exit.
+    """
     while True:
         start_printing()
         display_menu(theme, 1)
@@ -99,6 +117,11 @@ def change_theme_menu(theme: str) -> str | None:
 
 
 def re_generate_by_animation(maze: MazeGenerator) -> None:
+    """ Re-generate the maze with animation. If the maze is large, prompt the user for confirmation.
+
+    Args:
+        maze (MazeGenerator): The maze generator instance.
+    """
     animate = 'y'
     if len(maze.maze) * len(maze.maze[0]) > 1000:
         start_printing()
@@ -115,6 +138,12 @@ def re_generate_by_animation(maze: MazeGenerator) -> None:
 
 
 def main_menu(maze: MazeGenerator, art: MazeRenderer) -> None:
+    """Display the main menu and handle user input.
+
+    Args:
+        maze (MazeGenerator): The maze generator instance.
+        art (MazeRenderer): The maze renderer instance.
+    """
     show_path = False
     print(SAVE_CURSOR, end='', flush=True)
     while True:

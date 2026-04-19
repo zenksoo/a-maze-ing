@@ -50,6 +50,12 @@ class MazeGenerator:
         )
 
     def save_maze_to_file(self) -> None:
+        """ Save the generated maze and solution path to the specified output file.
+            The maze is saved in a text format where each cell's wall configuration
+            is represented by a hexadecimal character. After the maze grid, the entry
+            and exit coordinates are saved, followed by the solution path as a sequence
+            of directions (N, S, E, W).
+        """
         try:
             with open(self.output_file[0], "w") as f:
                 for row in self.maze:
@@ -148,6 +154,9 @@ class MazeGenerator:
             visited.add((origin_cell.x, origin_cell.y))
 
     def imperfect_maze(self) -> None:
+        """ Introduce imperfections by randomly opening walls from the entry and exit points.
+            This creates multiple paths and dead ends, making the maze more complex.
+        """
         direction = [Dir.N, Dir.E, Dir.S, Dir.W]
         reversed_dir = [Dir.S, Dir.W, Dir.N, Dir.E]
 
@@ -179,6 +188,10 @@ class MazeGenerator:
                    with_animation: bool = False
                    ) -> List[tuple[int, int]]:
         """Find the shortest path from start to end using A*.
+        Args:
+            start (MazeCell): The starting cell of the maze.
+            end (MazeCell): The target cell to reach.
+            with_animation (bool): Whether to animate the solving process.
 
             Returns:
                 Ordered list of (x, y) coordinates from start to end,
@@ -253,6 +266,13 @@ class MazeGenerator:
                 pass
 
     def find_and_mark_solution(self, with_animation: bool = False) -> None:
+        """ Find the solution path from entry to exit and mark it on the maze.
+        Args:
+            with_animation (bool, optional): Whether to animate the solving process. Defaults to False.
+
+        Raises:
+            ValueError: If no path exists between the entry and exit points.
+        """
         st_x, st_y = self.entry
         set_cell_type(self.maze[st_y][st_x], 's')
         ed_x, ed_y = self.exit

@@ -34,6 +34,14 @@ class MazeConfig(BaseModel):
 
     @classmethod
     def from_file(cls, f: TextIO) -> 'MazeConfig':
+        """ Create a MazeConfig instance by reading and parsing a configuration file.
+
+        Args:
+            f (TextIO): A file-like object containing the maze configuration in key=value format.
+
+        Returns:
+            MazeConfig: An instance of MazeConfig populated with the parsed configuration values.
+        """
         REQUIRED = [
             'WIDTH', 'HEIGHT', 'ENTRY',
             'EXIT', 'OUTPUT_FILE', 'PERFECT']

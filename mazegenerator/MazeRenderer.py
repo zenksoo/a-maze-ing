@@ -41,14 +41,17 @@ class ThemePicker:
             theme[key] = self.__get_rgb_bg(val)
 
     def maze_theme(self) -> Dict[Any, Any]:
+        """ Convert hex color codes in the maze theme to ANSI escape codes for terminal coloring."""
         self.edit_hex_theme(self.theme["maze_colors"])
         return self.theme["maze_colors"]
 
     def locations_theme(self) -> Dict[Any, Any]:
+        """ Convert hex color codes in the locations theme to ANSI escape codes for terminal coloring."""
         self.edit_hex_theme(self.theme["locations"])
         return self.theme["locations"]
 
     def menu_theme(self) -> Dict[Any, Any]:
+        """ Convert hex color codes in the menu theme to ANSI escape codes for terminal coloring."""
         menu_colors = self.theme["menu_colors"]
         for key, val in menu_colors.items():
             if key == "bg":
@@ -160,6 +163,13 @@ class MazeRenderer:
             raise ValueError("Invalid Config For MazeRandering")
 
     def render(self, show_path: bool = False) -> None:
+        """
+            Render the maze to the terminal using colored blocks.
+
+            Args:
+                show_path: If True, highlights the solution path in the maze.
+        """
+
         picker = ThemePicker(self.theme)
         maze_theme = picker.maze_theme().values()
         CELL, ROAD, WALL, OWALLS, PAD_C, BG_C, SHADOW, VISITED = maze_theme

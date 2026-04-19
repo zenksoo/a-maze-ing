@@ -73,6 +73,9 @@ class MazeCell:
 
     def get_all_neighbors(self, maze: List[List['MazeCell']]
                           ) -> List[tuple[Dir, 'MazeCell']]:
+        """ Get all valid neighboring cells along with their directions.
+        Args:
+            maze (List[List['MazeCell']]): The full 2D maze grid."""
         all_neighbors = []
         x, y = (self.x, self.y)
         if y - 1 >= 0:
@@ -86,7 +89,12 @@ class MazeCell:
         return all_neighbors
 
     def sync_walls(self, maze: List[List['MazeCell']]) -> None:
-        """Open the wall toward this cell's neighbor and close all others."""
+        """ Ensure that this cell's walls are consistent with its neighbors.
+        For each neighbor, if that neighbor has this cell as its neighbor,
+        open the wall in that direction; otherwise, close it.
+        Args:
+            maze (List[List['MazeCell']]): The full 2D maze grid.
+        """
         all_neighbors = self.get_all_neighbors(maze)
         origin = [Dir.N, Dir.E, Dir.S, Dir.W]
         reversed_dirs = [Dir.S, Dir.W, Dir.N, Dir.E]
@@ -100,6 +108,10 @@ class MazeCell:
 
     def get_open_neighbors(self, maze: List[List['MazeCell']]
                            ) -> List['MazeCell']:
+        """ Get all neighboring cells that are accessible (i.e., no wall in between).
+        Args:
+            maze (List[List['MazeCell']]): The full 2D maze grid.
+        """
         all_neighbors = []
         x, y = (self.x, self.y)
         if not self.value & 1 and y - 1 >= 0:
