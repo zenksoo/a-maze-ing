@@ -1,3 +1,4 @@
+This project has been created as part of the 42 curriculum by amissa, amedina
 # A-Maze-ing
 
 A Python-based maze generator and solver featuring configurable maze generation algorithms, interactive visualization, and pathfinding capabilities.
@@ -33,7 +34,7 @@ A-Maze-ing is an interactive terminal application that generates perfect and imp
 
 ### Requirements
 
-- Python 3.10 or higher
+- Python 3.11 or higher
 - Dependencies listed in `requirements.txt`
 
 ### Setup
@@ -44,7 +45,17 @@ git clone <repository-url>
 cd a-maze-ing
 ```
 
-2. Install dependencies:
+2. Start a Virtual Environment
+```bash
+    python -m venv venv/
+    source venv/bin/activate
+```
+
+3. install mazegenerator package
+```
+    pip install mazegenerator*.whl
+```
+4. Install dependencies:
 ```bash
 make install
 # or
@@ -100,7 +111,7 @@ SEED=1010            # Random seed (optional, uses current time if not set)
 - **WIDTH/HEIGHT**: Grid dimensions (minimum 3x3, recommended for visibility)
 - **ENTRY/EXIT**: Starting and ending coordinates (must be within grid bounds)
 - **OUTPUT_FILE**: File where the maze will be saved with solution
-- **PERFECT**: 
+- **PERFECT**:
   - `True` = Single path maze (Origin-Shift only)
   - `False` = Multiple paths and dead ends (Origin-Shift + imperfect modifications)
 - **SEED**: Random seed for reproducible mazes (if omitted, uses current timestamp)
@@ -117,7 +128,7 @@ The Origin-Shift algorithm generates perfect mazes:
 4. Repeat until all cells are visited
 5. Result: Exactly one path exists between any two points
 
-**Time Complexity**: O(width × height)  
+**Time Complexity**: O(width × height)
 **Space Complexity**: O(width × height) for maze grid + visited set
 
 ### A* Pathfinding
@@ -134,8 +145,8 @@ Finds the shortest path from entry to exit:
      - If lower than previous, update and add to open list
 4. Return empty list if no path exists
 
-**Heuristic**: Manhattan distance  
-**Time Complexity**: O(width × height × log(width × height))  
+**Heuristic**: Manhattan distance
+**Time Complexity**: O(width × height × log(width × height))
 **Space Complexity**: O(width × height)
 
 ### Imperfect Maze Generation
@@ -148,25 +159,6 @@ Adds complexity to perfect mazes:
 2. Repeat for entry point
 3. Result: Multiple paths exist, creating a more challenging maze
 
-## Project Structure
-
-```
-a-maze-ing/
-├── a_maze_ing.py              # Main entry point
-├── config.txt                 # Configuration file (example)
-├── requirements.txt           # Python dependencies
-├── README.md                  # This file
-├── Makefile                   # Build commands
-├── mazegenerator/
-│   ├── __init__.py           # Package exports
-│   ├── MazeGenerator.py       # Core generation logic
-│   ├── MazeCell.py           # Grid cell representation
-│   ├── MazeConfig.py         # Configuration parser
-│   ├── MazeRenderer.py       # Terminal rendering
-│   ├── cell_encoding.py      # Bit manipulation utilities
-│   └── themes/               # Color theme definitions
-└── .git/                     # Git repository
-```
 
 ### Key Modules
 
@@ -229,19 +221,6 @@ F0F0F0F0F0F0F0F0
 EEESSSSWWWWN...
 ```
 
-## Code Quality
-
-The project maintains high code quality standards:
-
-- **Linting**: `flake8` for style compliance
-- **Type Checking**: `mypy` with strict type hints
-- **Python Version**: 3.10+
-
-Run linting:
-```bash
-make lint          # Standard linting
-make lint-strict   # Strict mode with mypy
-```
 
 ## Requirements
 
@@ -249,13 +228,6 @@ See `requirements.txt` for complete dependencies:
 - pydantic (≥2.13.2) - Configuration validation
 - annotated-types - Type annotation support
 - typing-inspection - Advanced type handling
-
-## Troubleshooting
-
-### Terminal Display Issues
-- Ensure your terminal supports ANSI color codes
-- Try resizing the terminal window
-- On Windows, consider using Windows Terminal or WSL
 
 ### Large Maze Animation
 - For mazes larger than ~1000 cells, the application prompts to confirm animation
@@ -266,24 +238,13 @@ See `requirements.txt` for complete dependencies:
 - Set a fixed SEED value in config.txt to generate the same maze
 - Default (no SEED) uses current timestamp for randomness
 
-## Development
-
-### Running Tests
-```bash
-make test  # If test suite is configured
-```
-
-### Cleaning Build Artifacts
-```bash
-make clean
-```
 
 ## Team & Retrospective
 
 ### Team Members
 
-- **Amissa** - Pathfinding and Maze Generation Algorithms
-- **Amedina** - Makefile Configuration and Documentation
+- **Amissa** - Pathfinding and Maze Generation Algorithms and display
+- **Amedina** - Makefile Configuration and Documentation and config parsing
 
 ### What Worked Well ✅
 
@@ -302,21 +263,13 @@ make clean
 - **Animation System**: Implemented real-time animation for both maze generation and pathfinding processes
   - Animated generation (`R` command) shows the origin-shift algorithm in action
   - Animated solution (`S` command) visualizes the A* pathfinding step-by-step
-  - Automatic performance optimization for large mazes (prompts user for large maze animations)
-  - Smooth visual feedback with configurable animation timing
+  - support multiple themes
 
-### Lessons Learned
 
-- Bit-level cell encoding provides memory-efficient storage but requires careful implementation
-- Interactive terminal rendering with ANSI codes offers engaging user experience
-- Balancing visual feedback with performance is crucial for larger datasets
-- Comprehensive configuration system enables flexible maze generation scenarios
+## Resources
 
-## License
+[ANSI Escape, for Rendering](https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797)
 
-This project is part of the 42 school curriculum.
+[A* Algorithm](https://www.datacamp.com/tutorial/a-star-algorithm)
 
-## Authors
-
-- **Amissa** - Pathfinding and Maze Generation Algorithms
-- **Amedina** - Makefile and Documentation
+[Origin Shift Algo](https://www.youtube.com/watch?v=uctN47p_KVk&t=515s)

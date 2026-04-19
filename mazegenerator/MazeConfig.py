@@ -55,9 +55,9 @@ class MazeConfig(BaseModel):
                     continue
                 key, val = line.split("=")
                 key = key.strip().upper()
-                val = val.strip().upper()
+                val = val.strip()
                 if key in data and key in REQUIRED and val != data[key]:
-                    raise ValueError(f"Douplicate Key {key.strip()}")
+                    raise ValueError(f"Duplicate Key {key.strip()}")
                 data[key] = val
         except FileNotFoundError:
             raise ValueError(f"Config File {f.name} not found")
