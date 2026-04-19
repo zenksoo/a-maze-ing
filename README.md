@@ -278,10 +278,45 @@ make test  # If test suite is configured
 make clean
 ```
 
+## Team & Retrospective
+
+### Team Members
+
+- **Amissa** - Pathfinding and Maze Generation Algorithms
+- **Amedina** - Makefile Configuration and Documentation
+
+### What Worked Well ✅
+
+- **A* Pathfinding Algorithm**: The pathfinding implementation performs excellently, efficiently finding optimal solution paths with good performance across various maze sizes. The algorithm handles both perfect and imperfect mazes without issues.
+
+### Areas for Improvement 🔧
+
+- **Maze Generator Performance**: The Origin-Shift algorithm experiences performance degradation with large maze sizes (1000+ cells). Generation time increases significantly, and the algorithm may be slow during animated generation. Potential optimizations:
+  - Implement iterative approaches instead of recursive patterns
+  - Use more efficient data structures for tracking visited cells
+  - Parallelize generation where possible
+  - Cache frequently accessed neighbor calculations
+
+### Bonus Features 🎁
+
+- **Animation System**: Implemented real-time animation for both maze generation and pathfinding processes
+  - Animated generation (`R` command) shows the origin-shift algorithm in action
+  - Animated solution (`S` command) visualizes the A* pathfinding step-by-step
+  - Automatic performance optimization for large mazes (prompts user for large maze animations)
+  - Smooth visual feedback with configurable animation timing
+
+### Lessons Learned
+
+- Bit-level cell encoding provides memory-efficient storage but requires careful implementation
+- Interactive terminal rendering with ANSI codes offers engaging user experience
+- Balancing visual feedback with performance is crucial for larger datasets
+- Comprehensive configuration system enables flexible maze generation scenarios
+
 ## License
 
 This project is part of the 42 school curriculum.
 
-## Author
+## Authors
 
-Created as a 42 school project demonstrating maze generation and pathfinding algorithms.
+- **Amissa** - Pathfinding and Maze Generation Algorithms
+- **Amedina** - Makefile and Documentation
