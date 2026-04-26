@@ -1,4 +1,3 @@
-This project has been created as part of the 42 curriculum by amissa, amedina
 # A-Maze-ing
 
 A Python-based maze generator and solver featuring configurable maze generation algorithms, interactive visualization, and pathfinding capabilities.
@@ -238,38 +237,9 @@ See `requirements.txt` for complete dependencies:
 - Set a fixed SEED value in config.txt to generate the same maze
 - Default (no SEED) uses current timestamp for randomness
 
-
-## Team & Retrospective
-
-### Team Members
-
-- **Amissa** - Pathfinding and Maze Generation Algorithms and display
-- **Amedina** - Makefile Configuration and Documentation and config parsing
-
-### What Worked Well ✅
-
-- **A* Pathfinding Algorithm**: The pathfinding implementation performs excellently, efficiently finding optimal solution paths with good performance across various maze sizes. The algorithm handles both perfect and imperfect mazes without issues.
-
-### Areas for Improvement 🔧
-
-- **Maze Generator Performance**: The Origin-Shift algorithm experiences performance degradation with large maze sizes (1000+ cells). Generation time increases significantly, and the algorithm may be slow during animated generation. Potential optimizations:
-  - Implement iterative approaches instead of recursive patterns
-  - Use more efficient data structures for tracking visited cells
-  - Parallelize generation where possible
-  - Cache frequently accessed neighbor calculations
-
-### Bonus Features 🎁
-
 - **Animation System**: Implemented real-time animation for both maze generation and pathfinding processes
   - Animated generation (`R` command) shows the origin-shift algorithm in action
   - Animated solution (`S` command) visualizes the A* pathfinding step-by-step
   - support multiple themes
-
-
-## Resources
-
-[ANSI Escape, for Rendering](https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797)
-
-[A* Algorithm](https://www.datacamp.com/tutorial/a-star-algorithm)
 
 [Origin Shift Algo](https://www.youtube.com/watch?v=uctN47p_KVk&t=515s)
